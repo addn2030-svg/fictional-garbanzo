@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>نسخ كود الأتمتة — عبدالرحمن هوساوي</title>
+<style>
+ body{font-family:Tahoma,Arial,sans-serif;background:#0f2138;color:#eef3f8;margin:0;padding:24px;line-height:1.9}
+ .card{max-width:900px;margin:0 auto;background:#16304f;border-radius:14px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+ h1{color:#5ed9ac;font-size:26px;margin:0 0 6px}
+ .sub{color:#a9bdd4;margin-bottom:20px}
+ ol{padding-right:22px} li{margin-bottom:10px}
+ .warn{background:#3a2b12;border:1px solid #a97b2f;border-radius:10px;padding:12px 16px;margin:16px 0}
+ button{background:#5ed9ac;color:#08281c;border:none;border-radius:10px;padding:14px 30px;font-size:18px;font-weight:bold;cursor:pointer;font-family:inherit}
+ button:hover{background:#7ceabd}
+ #done{color:#5ed9ac;font-weight:bold;display:none;margin-right:14px}
+ textarea{width:100%;height:320px;background:#0b1a2c;color:#cfe3d9;border:1px solid #2c4a6e;border-radius:10px;padding:12px;font-family:monospace;font-size:12px;direction:ltr;text-align:left;margin-top:14px}
+ .small{color:#8fa5bd;font-size:13px}
+</style>
+</head>
+<body>
+<div class="card">
+ <h1>📋 نسخ كود الأتمتة — بضغطة واحدة</h1>
+ <div class="sub">ALL-IN-ONE-SAFE v2 &nbsp;|&nbsp; عبدالرحمن هوساوي — Life Pulse Automation</div>
+ <ol>
+  <li>اضغط الزر أدناه — يُنسَب <b>الكود كاملاً بدقة بايت-ببايت</b> (بدون سطر اسم ملف، بدون محارف خفية).</li>
+  <li>في Apps Script: من الشريط الجانبي الأيسر <b>احذف كل ملفات الكود الزائدة</b> — أبقِ <b>Code.gs</b> واحداً فقط.<br><span class="small">⚠️ سبب خطأك المتكرر: النسخة المكسورة بقيت في Code.gs القديم — إضافة ملفات جديدة لا تزيل الخطأ القديم لأن كل الملفات تُترجم معاً.</span></li>
+  <li>افتح Code.gs ← <b>Ctrl+A</b> ثم <b>Delete</b> ← <b>الصق</b> (Ctrl+V) ← <b>احفظ</b> Ctrl+S.</li>
+  <li>تحقق: أول سطر في المحرر يجب أن يبدأ بـ <b>/** ====</b> — أي شيء قبله احذفه.</li>
+  <li>Project Settings ⚙️ ← Time zone: <b>(GMT+03:00) Riyadh</b> ← شغّل <b>initializeSystem</b> ووافق على الصلاحيات.</li>
+  <li>المفاتيح: Project Settings ⚙️ ← Script Properties (القائمة الكاملة في SETUP-AR.md).</li>
+ </ol>
+ <div class="warn">💡 بديل بدون جدول مرتبط (فكرتك — بداية نظيفة 100%): افتح <b>script.google.com/create</b> ← الصق الكود ← احفظ ← شغّل <b>testLifePulseConnection</b> ثم <b>lpInstallTrigger</b>. جسر Life Pulse يعمل كاملاً كسكربت مستقل لأنه يفتح جدولك بالمعرّف.</div>
+ <button onclick="copyCode()">📋 نسخ الكود كاملاً</button><span id="done">✅ تم النسخ — الصقه الآن في Code.gs</span>
+ <textarea id="code" readonly spellcheck="false">/** ==================================================================
+ *  ALL-IN-ONE (PASTE-SAFE EDITION v2) - Life Pulse + Personal Automation
+ *  Single file: paste this ENTIRE file into Apps Script Code.gs
+ *
+ *  SETUP - BOUND MODE (script inside the sheet):
+ *    1) Sheet &gt; Extensions &gt; Apps Script
+ *    2) LEFT SIDEBAR: DELETE every extra .gs file - keep ONE Code.gs
+ *       (a broken old Code.gs keeps failing even after you add new files!)
+ *    3) Open that Code.gs &gt; Ctrl+A &gt; Delete &gt; paste this file &gt; Ctrl+S
+ *    4) Project Settings &gt; Time zone: (GMT+03:00) Riyadh
+ *    5) Run initializeSystem &gt; accept permissions
+ *    6) Project Settings &gt; Script Properties &gt; add your keys
+ *
+ *  SETUP - STANDALONE MODE (no bound sheet needed for Life Pulse):
+ *    1) Go to script.google.com/create
+ *    2) Paste this file &gt; Save &gt; Time zone Riyadh
+ *    3) Add Script Properties (keys)
+ *    4) Run testLifePulseConnection then lpInstallTrigger
+ *    Menu/onOpen does not appear in standalone mode; run functions
+ *    directly from the editor toolbar instead.
+ *
+ *  Arabic exists ONLY inside quoted strings (captions, menus,
+ *  disclaimer). All comments are pure ASCII on purpose.
+ *  ================================================================== */
+
+const CONFIG = {
+  //   Drive 
+  PENDING_FOLDER_ID: &#x27;PENDING_FOLDER_ID&#x27;,
+  POSTED_FOLDER_ID: &#x27;POSTED_FOLDER_ID&#x27;,
+  FAILED_FOLDER_ID: &#x27;FAILED_FOLDER_ID&#x27;,
+
+  MAIN_SHEET: &#x27;Main Posts&#x27;,
+  SCHEDULING_SHEET: &#x27;Scheduling&#x27;,
+  ANALYTICS_SHEET: &#x27;Analytics&#x27;,
+  AB_TEST_SHEET: &#x27;A/B Test Results&#x27;,
+  AI_SETTINGS_SHEET: &#x27;AI Settings&#x27;,
+  DASHBOARD_SHEET: &#x27;Dashboard&#x27;,
+  ERROR_LOG_SHEET: &#x27;Error Log&#x27;,
+
+  TIMEZONE: &#x27;Asia/Riyadh&#x27;,                 //   ( New_York   )
+  GRAPH_VERSION: &#x27;v23.0&#x27;,                  //  Graph API -     Meta
+  LINKEDIN_API_VERSION: &#x27;202506&#x27;,          //  LinkedIn-Version
+  OPENAI_MODEL: &#x27;gpt-4o-mini&#x27;,             //  gpt-4-turbo-preview ( )
+  MAX_RETRIES: 3,
+  RETRY_DELAY_MS: 5000,
+
+  //   : true =   
+  ENABLE_PLATFORMS: {
+    github:   true,   //   Issues +     CDN
+    linkedin: true,   //  
+    twitter:  false,  //  -  OAuth 1.0a  ( )
+    instagram:false,  //  -  Business + 
+    facebook: false   //  -  + 
+  },
+
+  //   A/B (    -  ) 
+  AB_TEST: {
+    enabled: false,          //    
+    platform: &#x27;linkedin&#x27;,    // A/B     ( )
+    gapHours: 48,            //    A  B
+    durationHours: 96        //     B
+  }
+};
+
+/**   -   Script Properties  */
+const SECRET_KEYS = [
+  &#x27;GITHUB_TOKEN&#x27;, &#x27;GITHUB_OWNER&#x27;, &#x27;GITHUB_REPO&#x27;,
+  &#x27;LINKEDIN_ACCESS_TOKEN&#x27;, &#x27;LINKEDIN_PERSON_URN&#x27;,       // URN  ( )
+  &#x27;TWITTER_API_KEY&#x27;, &#x27;TWITTER_API_SECRET&#x27;,
+  &#x27;TWITTER_ACCESS_TOKEN&#x27;, &#x27;TWITTER_ACCESS_SECRET&#x27;,
+  &#x27;FB_PAGE_ID&#x27;, &#x27;FB_ACCESS_TOKEN&#x27;, &#x27;INSTAGRAM_ACCOUNT_ID&#x27;,
+  &#x27;OPENAI_API_KEY&#x27;,
+  &#x27;NOTIFICATION_EMAIL&#x27;, &#x27;SLACK_WEBHOOK&#x27;                 // SLACK_WEBHOOK 
+];
+
+//     (  ) 
+const COL = {
+  MAIN: { POST_ID:1, TIMESTAMP:2, FILE_NAME:3, FILE_URL:4, STATUS:5, CAPTION:6, VAR_A:7, VAR_B:8, SCHEDULE:9,
+          GITHUB:10, LINKEDIN:11, TWITTER:12, INSTAGRAM:13, FACEBOOK:14, WINNER:15, ENGAGEMENT:16 },
+  SCHED: { POST_ID:1, TIME:2, TZ:3, PLATFORMS:4, STATUS:5, ACTUAL:6, VARIANT:7, CAPTION:8, FILE_ID:9 },
+  ANAL:  { POST_ID:1, PLATFORM:2, URL:3, PLATFORM_POST_ID:4, LIKES:5, COMMENTS:6, SHARES:7, IMPRESSIONS:8,
+           ENG_RATE:9, VARIANT:10, UPDATED:11 },
+  AB:    { POST_ID:1, CAPTION_A:2, ENG_A:3, CAPTION_B:4, ENG_B:5, WINNER:6, CONFIDENCE:7, PLATFORM:8,
+           STATUS:9, STARTED:10 }
+};
+
+/**    Script Properties    */
+function prop(name, fallback) {
+  const v = PropertiesService.getScriptProperties().getProperty(name);
+  return (v === null || v === &#x27;&#x27;) ? (fallback || &#x27;&#x27;) : v;
+}
+
+/**     (/) -       */
+function withRetry(fn, times) {
+  const n = times || CONFIG.MAX_RETRIES;
+  let lastErr;
+  for (let i = 0; i &lt; n; i++) {
+    try { return fn(); }
+    catch (e) {
+      lastErr = e;
+      if (i &lt; n - 1) Utilities.sleep(CONFIG.RETRY_DELAY_MS * (i + 1));
+    }
+  }
+  throw lastErr;
+}
+
+// ================================================================
+//     -    
+// ================================================================
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu(&#x27;🤖 الأتمتة&#x27;)
+    .addItem(&#x27;🚀 التهيئة الأولى (إنشاء الجداول)&#x27;, &#x27;initializeSystem&#x27;)
+    .addItem(&#x27;🔑 فحص المفاتيح&#x27;, &#x27;checkSecrets&#x27;)
+    .addSeparator()
+    .addItem(&#x27;▶️ مسح Drive والنشر الآن&#x27;, &#x27;scanDriveAndPost&#x27;)
+    .addSeparator()
+    .addSubMenu(SpreadsheetApp.getUi().createMenu(&#x27;🟣 Life Pulse&#x27;)
+      .addItem(&#x27;🔌 اختبار الاتصال بالجدول&#x27;, &#x27;testLifePulseConnection&#x27;)
+      .addItem(&#x27;📥 استيراد الأفكار المعتمدة (CONTENT_LIBRARY)&#x27;, &#x27;lpQueueApprovedIdeas&#x27;)
+      .addItem(&#x27;▶️ معالجة الطابور الآن&#x27;, &#x27;processLifePulseQueue&#x27;)
+      .addItem(&#x27;⏰ تثبيت مشغّل كل 10 دقائق&#x27;, &#x27;lpInstallTrigger&#x27;))
+    .addItem(&#x27;📈 تحديث التحليلات&#x27;, &#x27;refreshAnalytics&#x27;)
+    .addItem(&#x27;🧪 تقييم اختبارات A/B&#x27;, &#x27;evaluateABTests&#x27;)
+    .addItem(&#x27;📊 تحديث لوحة المعلومات&#x27;, &#x27;updateDashboard&#x27;)
+    .addSeparator()
+    .addItem(&#x27;⏰ تثبيت المشغّلات التلقائية&#x27;, &#x27;setupAllTriggers&#x27;)
+    .addToUi();
+}
+
+// ================================================================
+// ================================================================
+function initializeSystem() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const headers = {
+    [CONFIG.MAIN_SHEET]: [&#x27;Post ID&#x27;, &#x27;Timestamp&#x27;, &#x27;File Name&#x27;, &#x27;File URL&#x27;, &#x27;Status&#x27;,
+      &#x27;Caption (Primary)&#x27;, &#x27;Caption A&#x27;, &#x27;Caption B&#x27;, &#x27;Scheduled Time&#x27;,
+      &#x27;GitHub&#x27;, &#x27;LinkedIn&#x27;, &#x27;Twitter&#x27;, &#x27;Instagram&#x27;, &#x27;Facebook&#x27;, &#x27;Winner Caption&#x27;, &#x27;Total Engagement&#x27;],
+    [CONFIG.SCHEDULING_SHEET]: [&#x27;Post ID&#x27;, &#x27;Scheduled DateTime&#x27;, &#x27;Timezone&#x27;, &#x27;Platforms&#x27;,
+      &#x27;Status&#x27;, &#x27;Actual Post Time&#x27;, &#x27;Variant&#x27;, &#x27;Caption&#x27;, &#x27;Drive File ID&#x27;],
+    [CONFIG.ANALYTICS_SHEET]: [&#x27;Post ID&#x27;, &#x27;Platform&#x27;, &#x27;Post URL&#x27;, &#x27;Platform Post ID&#x27;,
+      &#x27;Likes&#x27;, &#x27;Comments&#x27;, &#x27;Shares&#x27;, &#x27;Impressions&#x27;, &#x27;Engagement Rate&#x27;, &#x27;Variant&#x27;, &#x27;Last Updated&#x27;],
+    [CONFIG.AB_TEST_SHEET]: [&#x27;Post ID&#x27;, &#x27;Caption A&#x27;, &#x27;Engagement A&#x27;, &#x27;Caption B&#x27;, &#x27;Engagement B&#x27;,
+      &#x27;Winner&#x27;, &#x27;Confidence&#x27;, &#x27;Platform&#x27;, &#x27;Status&#x27;, &#x27;Started&#x27;],
+    [CONFIG.AI_SETTINGS_SHEET]: [&#x27;Setting Name&#x27;, &#x27;Value&#x27;, &#x27;Description&#x27;],
+    [CONFIG.ERROR_LOG_SHEET]: [&#x27;Timestamp&#x27;, &#x27;Source&#x27;, &#x27;Error Message&#x27;, &#x27;Stack Trace&#x27;]
+  };
+
+  Object.keys(headers).forEach(function(name) {
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    if (sh.getLastRow() === 0) {
+      sh.appendRow(headers[name]);
+      sh.getRange(1, 1, 1, headers[name].length)
+        .setFontWeight(&#x27;bold&#x27;).setBackground(&#x27;#1c3a5e&#x27;).setFontColor(&#x27;#ffffff&#x27;);
+      sh.setFrozenRows(1);
+    }
+  });
+
+  //    -    
+  const ai = ss.getSheetByName(CONFIG.AI_SETTINGS_SHEET);
+  ai.getRange(2, 1, 7, 3).setValues([
+    [&#x27;Brand Name&#x27;, &#x27;عبدالرحمن هوساوي | Abdulrahman Hawsawi&#x27;, &#x27;اسم العلامة في التوليد&#x27;],
+    [&#x27;Brand Context&#x27;, &#x27;أخصائي علاج طبيعي ورئيس قسم إعادة تأهيل في السعودية. محتوى قيادي: إعادة التأهيل، العمل العميق، التميز السريري، سلامة المريض.&#x27;, &#x27;خلفية العلامة&#x27;],
+    [&#x27;Tone&#x27;, &#x27;Professional &amp; Inspirational&#x27;, &#x27;نبرة الصياغة&#x27;],
+    [&#x27;Style&#x27;, &#x27;Storytelling + Insight&#x27;, &#x27;أسلوب الصياغة&#x27;],
+    [&#x27;Hashtags Count&#x27;, &#x27;8&#x27;, &#x27;عدد الوسوم&#x27;],
+    [&#x27;Emoji Usage&#x27;, &#x27;Light&#x27;, &#x27;None/Light/Moderate/Heavy&#x27;],
+    [&#x27;Language&#x27;, &#x27;Arabic&#x27;, &#x27;لغة التعليق: Arabic أو English&#x27;]
+  ]);
+
+  createDashboard();
+  sendNotification(&#x27;تمت التهيئة&#x27;, &#x27;النظام جاهز. الخطوة التالية: إضافة المفاتيح في Script Properties ثم فحص المفاتيح.&#x27;, &#x27;success&#x27;);
+}
+
+/**       -      */
+function checkSecrets() {
+  const lines = [];
+  const required = [&#x27;NOTIFICATION_EMAIL&#x27;];
+  if (CONFIG.ENABLE_PLATFORMS.github) required.push(&#x27;GITHUB_TOKEN&#x27;, &#x27;GITHUB_OWNER&#x27;, &#x27;GITHUB_REPO&#x27;);
+  if (CONFIG.ENABLE_PLATFORMS.linkedin) required.push(&#x27;LINKEDIN_ACCESS_TOKEN&#x27;);
+  if (CONFIG.ENABLE_PLATFORMS.twitter) required.push(&#x27;TWITTER_API_KEY&#x27;, &#x27;TWITTER_API_SECRET&#x27;, &#x27;TWITTER_ACCESS_TOKEN&#x27;, &#x27;TWITTER_ACCESS_SECRET&#x27;);
+  if (CONFIG.ENABLE_PLATFORMS.instagram || CONFIG.ENABLE_PLATFORMS.facebook) required.push(&#x27;FB_ACCESS_TOKEN&#x27;);
+  if (CONFIG.ENABLE_PLATFORMS.instagram) required.push(&#x27;INSTAGRAM_ACCOUNT_ID&#x27;);
+  required.push(&#x27;OPENAI_API_KEY&#x27;);
+
+  required.forEach(function(k) {
+    const ok = prop(k) !== &#x27;&#x27;;
+    lines.push((ok ? &#x27;✅&#x27; : &#x27;❌&#x27;) + &#x27;  &#x27; + k);
+  });
+
+  const msg = &#x27;حالة المفاتيح:\n&#x27; + lines.join(&#x27;\n&#x27;) +
+    &#x27;\n\nالمكان الصحيح: Project Settings ⚙️ ← Script Properties&#x27;;
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* من محرر السكربت */ }
+  return msg;
+}
+
+// ================================================================
+// ================================================================
+function scanDriveAndPost() {
+  try {
+    processScheduledPosts();
+    const pending = DriveApp.getFolderById(CONFIG.PENDING_FOLDER_ID);
+    const files = pending.getFiles();
+    while (files.hasNext()) processFile(files.next());
+    updateDashboard();
+  } catch (error) {
+    logError(&#x27;scanDriveAndPost&#x27;, error);
+    sendNotification(&#x27;خطأ في الأتمتة&#x27;, String(error), &#x27;error&#x27;);
+  }
+}
+
+/**   :     SCHEDULE:    */
+function parseFileDescription(file) {
+  const desc = &#x27;&#x27;;
+  let custom = null, schedule = null;
+  let d = &#x27;&#x27;;
+  try { d = file.getDescription() || &#x27;&#x27;; } catch (e) { /* لا وصف */ }
+  if (d.indexOf(&#x27;SCHEDULE:&#x27;) !== -1) {
+    schedule = new Date(d.split(&#x27;SCHEDULE:&#x27;)[1].trim());
+    d = d.split(&#x27;SCHEDULE:&#x27;)[0];
+  }
+  if (d.trim()) custom = d.trim();
+  return { custom: custom, schedule: schedule };
+}
+
+function processFile(file) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.MAIN_SHEET);
+  const row = sh.getLastRow() + 1;
+  const postId = &#x27;POST_&#x27; + Date.now();
+  const parsed = parseFileDescription(file);
+
+  sh.getRange(row, COL.MAIN.POST_ID).setValue(postId);
+  sh.getRange(row, COL.MAIN.TIMESTAMP).setValue(new Date());
+  sh.getRange(row, COL.MAIN.FILE_NAME).setValue(file.getName());
+  sh.getRange(row, COL.MAIN.FILE_URL).setValue(file.getUrl());
+  sh.getRange(row, COL.MAIN.STATUS).setValue(&#x27;Processing&#x27;);
+
+  try {
+    const imageBlob = file.getBlob();
+    const captions = parsed.custom
+      ? { primary: parsed.custom, variantA: parsed.custom, variantB: parsed.custom, hashtags: [] }
+      : generateAICaptions(file.getName(), imageBlob);
+
+    if (parsed.schedule &amp;&amp; parsed.schedule &gt; new Date()) {
+      schedulePost(postId, parsed.schedule, file.getId(), captions, &#x27;PRIMARY&#x27;, enabledPlatforms().join(&#x27;,&#x27;));
+      sh.getRange(row, COL.MAIN.STATUS).setValue(&#x27;⏰ Scheduled&#x27;);
+      sh.getRange(row, COL.MAIN.CAPTION).setValue(captions.primary);
+      sh.getRange(row, COL.MAIN.VAR_A).setValue(captions.variantA || &#x27;&#x27;);
+      sh.getRange(row, COL.MAIN.VAR_B).setValue(captions.variantB || &#x27;&#x27;);
+      sh.getRange(row, COL.MAIN.SCHEDULE).setValue(parsed.schedule);
+      return;
+    }
+
+    const results = postToAllPlatforms(postId, imageBlob, captions, &#x27;A&#x27;);
+    writePlatformResults(row, results);
+
+    // A/B:   B      
+    if (CONFIG.AB_TEST.enabled &amp;&amp; captions.variantB &amp;&amp; captions.variantB !== captions.primary) {
+      const bTime = new Date(Date.now() + CONFIG.AB_TEST.gapHours * 3600 * 1000);
+      schedulePost(postId + &#x27;_B&#x27;, bTime, file.getId(),
+        { primary: captions.variantB }, &#x27;B&#x27;, CONFIG.AB_TEST.platform);
+      logABTest(postId, captions.variantA, captions.variantB);
+    }
+
+    sh.getRange(row, COL.MAIN.CAPTION).setValue(captions.primary);
+    sh.getRange(row, COL.MAIN.VAR_A).setValue(captions.variantA || &#x27;&#x27;);
+    sh.getRange(row, COL.MAIN.VAR_B).setValue(captions.variantB || &#x27;&#x27;);
+
+    const allOk = enabledPlatforms().every(function(p) {
+      return results.platforms[p] &amp;&amp; results.platforms[p].success;
+    });
+    if (allOk) {
+      moveFile(file, CONFIG.POSTED_FOLDER_ID);
+      sh.getRange(row, COL.MAIN.STATUS).setValue(&#x27;✅ Posted&#x27;);
+      sendNotification(&#x27;تم النشر&#x27;, file.getName(), &#x27;success&#x27;);
+    } else {
+      moveFile(file, CONFIG.FAILED_FOLDER_ID);
+      sh.getRange(row, COL.MAIN.STATUS).setValue(&#x27;⚠️ Partial&#x27;);
+      sendNotification(&#x27;نشر جزئي&#x27;, file.getName() + &#x27; — راجع Error Log&#x27;, &#x27;warning&#x27;);
+    }
+  } catch (error) {
+    sh.getRange(row, COL.MAIN.STATUS).setValue(&#x27;❌ Failed&#x27;);
+    logError(&#x27;processFile: &#x27; + file.getName(), error);
+    try { moveFile(file, CONFIG.FAILED_FOLDER_ID); } catch (e2) { /* */ }
+  }
+}
+
+function enabledPlatforms() {
+  return Object.keys(CONFIG.ENABLE_PLATFORMS).filter(function(p) { return CONFIG.ENABLE_PLATFORMS[p]; });
+}
+
+function writePlatformResults(row, results) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.MAIN_SHEET);
+  const map = { github: COL.MAIN.GITHUB, linkedin: COL.MAIN.LINKEDIN, twitter: COL.MAIN.TWITTER,
+                instagram: COL.MAIN.INSTAGRAM, facebook: COL.MAIN.FACEBOOK };
+  Object.keys(results.platforms).forEach(function(p) {
+    const r = results.platforms[p];
+    sh.getRange(row, map[p]).setValue(r.success ? &#x27;✅&#x27; : &#x27;❌&#x27;);
+  });
+  const total = Object.keys(results.platforms).reduce(function(s, p) {
+    return s + (results.platforms[p].success ? 1 : 0);
+  }, 0);
+  sh.getRange(row, COL.MAIN.ENGAGEMENT).setValue(total + &#x27;/&#x27; + enabledPlatforms().length);
+}
+
+// ================================================================
+// ================================================================
+function getAISettings() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.AI_SETTINGS_SHEET);
+  const s = {};
+  if (sh &amp;&amp; sh.getLastRow() &gt; 1) {
+    sh.getDataRange().getValues().slice(1).forEach(function(r) {
+      if (r[0]) s[String(r[0]).toLowerCase().replace(/\s+/g, &#x27;&#x27;)] = String(r[1] || &#x27;&#x27;);
+    });
+  }
+  return {
+    brandName: s.brandname || &#x27;عبدالرحمن هوساوي | Abdulrahman Hawsawi&#x27;,
+    brandContext: s.brandcontext || &#x27;أخصائي علاج طبيعي ورئيس قسم إعادة تأهيل في السعودية.&#x27;,
+    tone: s.tone || &#x27;Professional &amp; Inspirational&#x27;,
+    style: s.style || &#x27;Storytelling + Insight&#x27;,
+    hashtagsCount: parseInt(s.hashtagscount, 10) || 8,
+    emojiUsage: s.emojiusage || &#x27;Light&#x27;,
+    language: s.language || &#x27;Arabic&#x27;
+  };
+}
+
+function buildPrompt(fileName, settings) {
+  return &#x27;You are the personal-brand copywriter for &quot;&#x27; + settings.brandName + &#x27;&quot; (&#x27; + settings.brandContext + &#x27;).\n&#x27; +
+    &#x27;Write 3 social-media captions for a new post (source image file: &quot;&#x27; + fileName + &#x27;&quot;).\n&#x27; +
+    &#x27;Rules:\n&#x27; +
+    &#x27;- Tone: &#x27; + settings.tone + &#x27;\n&#x27; +
+    &#x27;- Style: &#x27; + settings.style + &#x27;\n&#x27; +
+    &#x27;- Language: &#x27; + settings.language + &#x27; (write the captions fully in this language)\n&#x27; +
+    &#x27;- Emojis: &#x27; + settings.emojiUsage + &#x27;\n&#x27; +
+    &#x27;- Put exactly &#x27; + settings.hashtagsCount + &#x27; relevant hashtags at the end of each caption\n&#x27; +
+    &#x27;- LinkedIn-first: the FIRST line must be a strong hook (visible before &quot;…see more&quot;), then short single-line paragraphs, then a closing question that invites comments\n&#x27; +
+    &#x27;- Primary caption max 1300 characters; each variant must take a genuinely different angle\n\n&#x27; +
+    &#x27;Return ONLY valid JSON: {&quot;primary&quot;:&quot;...&quot;,&quot;variantA&quot;:&quot;...&quot;,&quot;variantB&quot;:&quot;...&quot;,&quot;hashtags&quot;:[&quot;...&quot;]}&#x27;;
+}
+
+function generateAICaptions(fileName, imageBlob) {
+  try {
+    const settings = getAISettings();
+    const response = UrlFetchApp.fetch(&#x27;https://api.openai.com/v1/chat/completions&#x27;, {
+      method: &#x27;post&#x27;,
+      headers: {
+        &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + prop(&#x27;OPENAI_API_KEY&#x27;),
+        &#x27;Content-Type&#x27;: &#x27;application/json&#x27;
+      },
+      payload: JSON.stringify({
+        model: CONFIG.OPENAI_MODEL,
+        messages: [{ role: &#x27;user&#x27;, content: buildPrompt(fileName, settings) }],
+        temperature: 0.9,
+        response_format: { type: &#x27;json_object&#x27; },
+        max_tokens: 1500
+      }),
+      muteHttpExceptions: true
+    });
+    const data = JSON.parse(response.getContentText());
+    let txt = data.choices[0].message.content;
+    if (txt.indexOf(&#x27;```&#x27;) !== -1) txt = txt.split(&#x27;```&#x27;)[1].replace(/^json\n?/, &#x27;&#x27;);
+    const c = JSON.parse(txt.trim());
+    return { primary: c.primary, variantA: c.variantA, variantB: c.variantB, hashtags: c.hashtags || [] };
+  } catch (error) {
+    logError(&#x27;AI Caption Generation&#x27;, error);
+    return {
+      primary: &#x27;بعد ٢٠ عاماً في إعادة التأهيل… تعلمت أن العمق يصنع الفرق. 🎯\n\nما رأيك؟\n\n#إعادة_التأهيل #التميز_السريري #قيادة_الرعاية_الصحية&#x27;,
+      variantA: &#x27;فكرة جديدة أشاركها معكم اليوم — أتطلع لقراءاتكم. 📌\n\n#العلاج_الطبيعي #العمل_العميق&#x27;,
+      variantB: &#x27;خلاصة تجربة عملية أودّ تقاسمها معكم. 🌟\n\n#صحة_السعودية #قيادة&#x27;
+    };
+  }
+}
+
+// ================================================================
+// ================================================================
+function postToAllPlatforms(postId, imageBlob, captions, variantTag) {
+  const results = { postId: postId, platforms: {} };
+  enabledPlatforms().forEach(function(p) {
+    const caption = (CONFIG.AB_TEST.enabled &amp;&amp; CONFIG.AB_TEST.platform === p &amp;&amp; captions.variantA &amp;&amp; variantTag === &#x27;A&#x27;)
+      ? captions.variantA : captions.primary;
+    results.platforms[p] = postToPlatform(p, imageBlob, caption, postId);
+  });
+  startAnalyticsTracking(postId, results, variantTag);
+  return results;
+}
+
+function postToPlatform(platform, imageBlob, caption, postId) {
+  try {
+    switch (platform) {
+      case &#x27;github&#x27;:    return postToGitHub(imageBlob, caption, postId);
+      case &#x27;linkedin&#x27;:  return postToLinkedIn(imageBlob, caption, postId);
+      case &#x27;twitter&#x27;:   return postToTwitter(imageBlob, caption, postId);
+      case &#x27;instagram&#x27;: return postToInstagram(imageBlob, caption, postId);
+      case &#x27;facebook&#x27;:  return postToFacebook(imageBlob, caption, postId);
+      default: return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: platform };
+    }
+  } catch (error) {
+    logError(&#x27;postToPlatform: &#x27; + platform, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: platform };
+  }
+}
+
+//  GitHub:   Issues +     (CDN) 
+function getGithubDefaultBranch() {
+  const r = UrlFetchApp.fetch(&#x27;https://api.github.com/repos/&#x27; + prop(&#x27;GITHUB_OWNER&#x27;) + &#x27;/&#x27; + prop(&#x27;GITHUB_REPO&#x27;), {
+    headers: { &#x27;Authorization&#x27;: &#x27;token &#x27; + prop(&#x27;GITHUB_TOKEN&#x27;), &#x27;Accept&#x27;: &#x27;application/vnd.github.v3+json&#x27; },
+    muteHttpExceptions: true
+  });
+  return JSON.parse(r.getContentText()).default_branch || &#x27;main&#x27;;
+}
+
+/**       raw  -   image_url  */
+function uploadImageToGitHub(fileName, imageBlob) {
+  const branch = getGithubDefaultBranch();
+  const safe = String(fileName).replace(/[^\w.\-]+/g, &#x27;-&#x27;);
+  const path = &#x27;posters/&#x27; + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, &#x27;yyyy-MM-dd/HHmmss&#x27;) + &#x27;-&#x27; + safe;
+  const res = UrlFetchApp.fetch(
+    &#x27;https://api.github.com/repos/&#x27; + prop(&#x27;GITHUB_OWNER&#x27;) + &#x27;/&#x27; + prop(&#x27;GITHUB_REPO&#x27;) + &#x27;/contents/&#x27; + path, {
+      method: &#x27;put&#x27;,
+      headers: { &#x27;Authorization&#x27;: &#x27;token &#x27; + prop(&#x27;GITHUB_TOKEN&#x27;), &#x27;Accept&#x27;: &#x27;application/vnd.github.v3+json&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      payload: JSON.stringify({ message: &#x27;Auto-poster image&#x27;, content: Utilities.base64Encode(imageBlob.getBytes()), branch: branch }),
+      muteHttpExceptions: true
+    });
+  if (res.getResponseCode() &gt;= 300) throw new Error(&#x27;GitHub upload failed: &#x27; + res.getContentText());
+  return &#x27;https://raw.githubusercontent.com/&#x27; + prop(&#x27;GITHUB_OWNER&#x27;) + &#x27;/&#x27; + prop(&#x27;GITHUB_REPO&#x27;) + &#x27;/&#x27; + branch + &#x27;/&#x27; + path;
+}
+
+function postToGitHub(imageBlob, caption, postId) {
+  try {
+    const imageUrl = uploadImageToGitHub(&#x27;poster-&#x27; + postId + &#x27;.png&#x27;, imageBlob);
+    const res = UrlFetchApp.fetch(
+      &#x27;https://api.github.com/repos/&#x27; + prop(&#x27;GITHUB_OWNER&#x27;) + &#x27;/&#x27; + prop(&#x27;GITHUB_REPO&#x27;) + &#x27;/issues&#x27;, {
+        method: &#x27;post&#x27;,
+        headers: { &#x27;Authorization&#x27;: &#x27;token &#x27; + prop(&#x27;GITHUB_TOKEN&#x27;), &#x27;Accept&#x27;: &#x27;application/vnd.github.v3+json&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+        payload: JSON.stringify({
+          title: &#x27;Poster — &#x27; + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, &#x27;yyyy-MM-dd HH:mm&#x27;),
+          body: caption + &#x27;\n\n![Poster](&#x27; + imageUrl + &#x27;)\n\nPost ID: &#x27; + postId,
+          labels: [&#x27;auto-posted&#x27;]
+        }),
+        muteHttpExceptions: true
+      });
+    const data = JSON.parse(res.getContentText());
+    if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+    return { success: true, url: data.html_url, postId: String(data.number), platform: &#x27;github&#x27; };
+  } catch (error) {
+    logError(&#x27;GitHub&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: &#x27;github&#x27; };
+  }
+}
+
+//  LinkedIn 
+function getLinkedInUrn() {
+  let urn = prop(&#x27;LINKEDIN_PERSON_URN&#x27;);
+  if (urn) return urn;
+  const r = UrlFetchApp.fetch(&#x27;https://api.linkedin.com/v2/userinfo&#x27;, {
+    headers: { &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + prop(&#x27;LINKEDIN_ACCESS_TOKEN&#x27;) },
+    muteHttpExceptions: true
+  });
+  if (r.getResponseCode() &gt;= 300) throw new Error(&#x27;LinkedIn userinfo failed (أضف منتج &quot;Sign In with LinkedIn using OpenID Connect&quot; ثم أعده): &#x27; + r.getContentText());
+  urn = &#x27;urn:li:person:&#x27; + JSON.parse(r.getContentText()).sub;
+  PropertiesService.getScriptProperties().setProperty(&#x27;LINKEDIN_PERSON_URN&#x27;, urn);
+  return urn;
+}
+
+function postToLinkedIn(imageBlob, caption, postId) {
+  try {
+    const owner = getLinkedInUrn();
+    const token = prop(&#x27;LINKEDIN_ACCESS_TOKEN&#x27;);
+    const baseHeaders = {
+      &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + token,
+      &#x27;X-Restli-Protocol-Version&#x27;: &#x27;2.0.0&#x27;,
+      &#x27;LinkedIn-Version&#x27;: CONFIG.LINKEDIN_API_VERSION
+    };
+
+    // 1)   
+    const reg = UrlFetchApp.fetch(&#x27;https://api.linkedin.com/v2/assets?action=registerUpload&#x27;, {
+      method: &#x27;post&#x27;,
+      headers: Object.assign({ &#x27;Content-Type&#x27;: &#x27;application/json&#x27; }, baseHeaders),
+      payload: JSON.stringify({
+        registerUploadRequest: {
+          recipes: [&#x27;urn:li:digitalmediaRecipe:feedshare-image&#x27;],
+          owner: owner,
+          serviceRelationships: [{ relationshipType: &#x27;OWNER&#x27;, identifier: &#x27;urn:li:userGeneratedContent&#x27; }]
+        }
+      }),
+      muteHttpExceptions: true
+    });
+    if (reg.getResponseCode() &gt;= 300) throw new Error(&#x27;registerUpload: &#x27; + reg.getContentText());
+    const regData = JSON.parse(reg.getContentText());
+    const uploadUrl = regData.value.uploadMechanism[&#x27;com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest&#x27;].uploadUrl;
+    const asset = regData.value.asset;
+
+    // 2)   
+    const up = UrlFetchApp.fetch(uploadUrl, {
+      method: &#x27;post&#x27;,
+      headers: { &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + token },
+      payload: imageBlob.getBytes(),
+      muteHttpExceptions: true
+    });
+    if (up.getResponseCode() &gt;= 300) throw new Error(&#x27;asset upload: &#x27; + up.getContentText());
+
+    // 3)  
+    const post = UrlFetchApp.fetch(&#x27;https://api.linkedin.com/v2/ugcPosts&#x27;, {
+      method: &#x27;post&#x27;,
+      headers: Object.assign({ &#x27;Content-Type&#x27;: &#x27;application/json&#x27; }, baseHeaders),
+      payload: JSON.stringify({
+        author: owner,
+        lifecycleState: &#x27;PUBLISHED&#x27;,
+        specificContent: {
+          &#x27;com.linkedin.ugc.ShareContent&#x27;: {
+            shareCommentary: { text: caption },
+            shareMediaCategory: &#x27;IMAGE&#x27;,
+            media: [{ status: &#x27;READY&#x27;, media: asset }]
+          }
+        },
+        visibility: { &#x27;com.linkedin.ugc.MemberNetworkVisibility&#x27;: &#x27;PUBLIC&#x27; }
+      }),
+      muteHttpExceptions: true
+    });
+    if (post.getResponseCode() &gt;= 300) throw new Error(&#x27;ugcPosts: &#x27; + post.getContentText());
+    const urn = JSON.parse(post.getContentText()).id;
+    return { success: true, url: &#x27;https://www.linkedin.com/feed/update/&#x27; + urn, postId: urn, platform: &#x27;linkedin&#x27; };
+  } catch (error) {
+    logError(&#x27;LinkedIn&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: &#x27;linkedin&#x27; };
+  }
+}
+
+//  Twitter/X -  OAuth 1.0a  (    ) 
+function pct(s) {
+  return encodeURIComponent(String(s)).replace(/[!&#x27;()*]/g, function(c) {
+    return &#x27;%&#x27; + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+
+function twitterOAuthHeader(method, url, formParams) {
+  const oauth = {
+    oauth_consumer_key: prop(&#x27;TWITTER_API_KEY&#x27;),
+    oauth_nonce: Utilities.getUuid().replace(/-/g, &#x27;&#x27;),
+    oauth_signature_method: &#x27;HMAC-SHA1&#x27;,
+    oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+    oauth_token: prop(&#x27;TWITTER_ACCESS_TOKEN&#x27;),
+    oauth_version: &#x27;1.0&#x27;
+  };
+  const all = {};
+  Object.keys(formParams || {}).forEach(function(k) { all[k] = formParams[k]; });
+  Object.keys(oauth).forEach(function(k) { all[k] = oauth[k]; });
+  const baseParams = Object.keys(all).sort().map(function(k) { return pct(k) + &#x27;=&#x27; + pct(all[k]); }).join(&#x27;&amp;&#x27;);
+  const baseUrl = url.split(&#x27;?&#x27;)[0];
+  const baseString = [method.toUpperCase(), pct(baseUrl), pct(baseParams)].join(&#x27;&amp;&#x27;);
+  const signingKey = pct(prop(&#x27;TWITTER_API_SECRET&#x27;)) + &#x27;&amp;&#x27; + pct(prop(&#x27;TWITTER_ACCESS_SECRET&#x27;));
+  oauth.oauth_signature = Utilities.base64Encode(Utilities.computeHmacSha1Signature(baseString, signingKey));
+  return &#x27;OAuth &#x27; + Object.keys(oauth).sort().map(function(k) { return pct(k) + &#x27;=&quot;&#x27; + pct(oauth[k]) + &#x27;&quot;&#x27;; }).join(&#x27;, &#x27;);
+}
+
+function postToTwitter(imageBlob, caption, postId) {
+  try {
+    const b64 = Utilities.base64Encode(imageBlob.getBytes());
+    const uploadUrl = &#x27;https://upload.twitter.com/1.1/media/upload.json&#x27;;
+    const mediaRes = UrlFetchApp.fetch(uploadUrl, {
+      method: &#x27;post&#x27;,
+      headers: { &#x27;Authorization&#x27;: twitterOAuthHeader(&#x27;POST&#x27;, uploadUrl, { media_data: b64 }) },
+      payload: { media_data: b64 },
+      muteHttpExceptions: true
+    });
+    if (mediaRes.getResponseCode() &gt;= 300) throw new Error(&#x27;media upload: &#x27; + mediaRes.getContentText());
+    const mediaId = JSON.parse(mediaRes.getContentText()).media_id_string;
+
+    const tweetUrl = &#x27;https://api.twitter.com/2/tweets&#x27;;
+    const tweetRes = UrlFetchApp.fetch(tweetUrl, {
+      method: &#x27;post&#x27;,
+      headers: { &#x27;Authorization&#x27;: twitterOAuthHeader(&#x27;POST&#x27;, tweetUrl, {}), &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      payload: JSON.stringify({ text: caption.substring(0, 280), media: { media_ids: [mediaId] } }),
+      muteHttpExceptions: true
+    });
+    if (tweetRes.getResponseCode() &gt;= 300) throw new Error(&#x27;tweet: &#x27; + tweetRes.getContentText());
+    const tweetId = JSON.parse(tweetRes.getContentText()).data.id;
+    return { success: true, url: &#x27;https://twitter.com/i/web/status/&#x27; + tweetId, postId: tweetId, platform: &#x27;twitter&#x27; };
+  } catch (error) {
+    logError(&#x27;Twitter&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: &#x27;twitter&#x27; };
+  }
+}
+
+//  Instagram (     -   GitHub ) 
+function postToInstagram(imageBlob, caption, postId) {
+  try {
+    const igId = prop(&#x27;INSTAGRAM_ACCOUNT_ID&#x27;);
+    const token = prop(&#x27;FB_ACCESS_TOKEN&#x27;);
+    const base = &#x27;https://graph.facebook.com/&#x27; + CONFIG.GRAPH_VERSION;
+    const publicUrl = uploadImageToGitHub(&#x27;ig-&#x27; + postId + &#x27;.png&#x27;, imageBlob); //     
+
+    const up = UrlFetchApp.fetch(base + &#x27;/&#x27; + igId + &#x27;/media&#x27;, {
+      method: &#x27;post&#x27;,
+      payload: { image_url: publicUrl, caption: caption, access_token: token },
+      muteHttpExceptions: true
+    });
+    if (up.getResponseCode() &gt;= 300) throw new Error(&#x27;IG create container: &#x27; + up.getContentText());
+    const creationId = JSON.parse(up.getContentText()).id;
+
+    Utilities.sleep(5000); //  
+    const pub = UrlFetchApp.fetch(base + &#x27;/&#x27; + igId + &#x27;/media_publish&#x27;, {
+      method: &#x27;post&#x27;,
+      payload: { creation_id: creationId, access_token: token },
+      muteHttpExceptions: true
+    });
+    if (pub.getResponseCode() &gt;= 300) throw new Error(&#x27;IG publish: &#x27; + pub.getContentText());
+    const mediaId = JSON.parse(pub.getContentText()).id;
+
+    let permalink = &#x27;https://www.instagram.com/&#x27;;
+    try {
+      const pf = UrlFetchApp.fetch(base + &#x27;/&#x27; + mediaId + &#x27;?fields=permalink&amp;access_token=&#x27; + token, { muteHttpExceptions: true });
+      permalink = JSON.parse(pf.getContentText()).permalink || permalink;
+    } catch (e) { /* الرابط ليس حرجاً */ }
+    return { success: true, url: permalink, postId: mediaId, platform: &#x27;instagram&#x27; };
+  } catch (error) {
+    logError(&#x27;Instagram&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: &#x27;instagram&#x27; };
+  }
+}
+
+//  Facebook (   -   message  caption) 
+function postToFacebook(imageBlob, caption, postId) {
+  try {
+    const base = &#x27;https://graph.facebook.com/&#x27; + CONFIG.GRAPH_VERSION;
+    const res = UrlFetchApp.fetch(base + &#x27;/&#x27; + prop(&#x27;FB_PAGE_ID&#x27;) + &#x27;/photos&#x27;, {
+      method: &#x27;post&#x27;,
+      payload: {
+        source: imageBlob,
+        message: caption,
+        published: true,
+        access_token: prop(&#x27;FB_ACCESS_TOKEN&#x27;)
+      },
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() &gt;= 300) throw new Error(&#x27;FB photo: &#x27; + res.getContentText());
+    const data = JSON.parse(res.getContentText());
+    const id = data.post_id || data.id;
+    return { success: true, url: &#x27;https://www.facebook.com/&#x27; + id, postId: String(id), platform: &#x27;facebook&#x27; };
+  } catch (error) {
+    logError(&#x27;Facebook&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, postId: &#x27;&#x27;, platform: &#x27;facebook&#x27; };
+  }
+}
+
+// ================================================================
+// ================================================================
+function schedulePost(postId, scheduledTime, driveFileId, captions, variant, platforms) {
+  SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SCHEDULING_SHEET).appendRow([
+    postId, scheduledTime, CONFIG.TIMEZONE, platforms || enabledPlatforms().join(&#x27;,&#x27;), &#x27;Pending&#x27;, &#x27;&#x27;,
+    variant || &#x27;PRIMARY&#x27;, captions.primary, driveFileId
+  ]);
+  sendNotification(&#x27;منشور مجدول&#x27;, postId + &#x27; → &#x27; + scheduledTime, &#x27;info&#x27;);
+}
+
+function processScheduledPosts() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SCHEDULING_SHEET);
+  if (sh.getLastRow() &lt; 2) return;
+  const data = sh.getDataRange().getValues();
+  const now = new Date();
+
+  for (let i = 1; i &lt; data.length; i++) {
+    const row = data[i];
+    if (row[COL.SCHED.STATUS - 1] !== &#x27;Pending&#x27;) continue;
+    const due = new Date(row[COL.SCHED.TIME - 1]);
+    if (due &gt; now) continue;
+
+    const postId = row[COL.SCHED.POST_ID - 1];
+    const variant = row[COL.SCHED.VARIANT - 1] || &#x27;PRIMARY&#x27;;
+    const captionText = row[COL.SCHED.CAPTION - 1];
+    const fileId = row[COL.SCHED.FILE_ID - 1];
+
+    try {
+      const imageBlob = DriveApp.getFileById(fileId).getBlob();
+      const captions = { primary: captionText, variantA: null, variantB: null };
+      const targetPlatform = row[COL.SCHED.PLATFORMS - 1] || enabledPlatforms().join(&#x27;,&#x27;);
+
+      let results;
+      if (variant === &#x27;B&#x27;) {
+        //  B  A/B -    
+        const r = postToPlatform(CONFIG.AB_TEST.platform, imageBlob, captionText, postId);
+        results = { postId: postId, platforms: {} };
+        results.platforms[CONFIG.AB_TEST.platform] = r;
+        startAnalyticsTracking(postId, results, &#x27;B&#x27;);
+      } else {
+        results = postToAllPlatforms(postId, imageBlob, captions, &#x27;A&#x27;);
+      }
+
+      sh.getRange(i + 1, COL.SCHED.STATUS).setValue(&#x27;Posted&#x27;);
+      sh.getRange(i + 1, COL.SCHED.ACTUAL).setValue(new Date());
+
+      //       (  )
+      if (variant !== &#x27;B&#x27;) {
+        const mainSh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.MAIN_SHEET);
+        const mainRow = findRowByPostId(mainSh, postId);
+        if (mainRow) writePlatformResults(mainRow, results);
+      }
+      sendNotification(&#x27;نُشر المنشور المجدول&#x27;, String(postId), &#x27;success&#x27;);
+    } catch (error) {
+      sh.getRange(i + 1, COL.SCHED.STATUS).setValue(&#x27;Failed&#x27;);
+      logError(&#x27;Scheduled post &#x27; + postId, error);
+    }
+  }
+}
+
+function findRowByPostId(sh, postId) {
+  if (sh.getLastRow() &lt; 2) return null;
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i &lt; data.length; i++) {
+    if (data[i][COL.MAIN.POST_ID - 1] === postId) return i + 1;
+  }
+  return null;
+}
+
+// ================================================================
+// ================================================================
+function startAnalyticsTracking(postId, results, variant) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.ANALYTICS_SHEET);
+  Object.keys(results.platforms).forEach(function(p) {
+    const r = results.platforms[p];
+    if (!r.success) return;
+    sh.appendRow([postId, p, r.url, r.postId, 0, 0, 0, 0, &#x27;0%&#x27;, variant || &#x27;PRIMARY&#x27;, new Date()]);
+  });
+}
+
+function refreshAnalytics() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.ANALYTICS_SHEET);
+  if (sh.getLastRow() &lt; 2) return;
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i &lt; data.length; i++) {
+    const platform = data[i][COL.ANAL.PLATFORM - 1];
+    const platformPostId = data[i][COL.ANAL.PLATFORM_POST_ID - 1]; // &lt;-     
+    if (!platformPostId) continue;
+    try {
+      const m = withRetry(function() { return fetchPlatformMetrics(platform, String(platformPostId)); }, 2);
+      if (!m) continue;
+      sh.getRange(i + 1, COL.ANAL.LIKES).setValue(m.likes || 0);
+      sh.getRange(i + 1, COL.ANAL.COMMENTS).setValue(m.comments || 0);
+      sh.getRange(i + 1, COL.ANAL.SHARES).setValue(m.shares || 0);
+      sh.getRange(i + 1, COL.ANAL.IMPRESSIONS).setValue(m.impressions || 0);
+      const eng = (m.likes || 0) + (m.comments || 0) + (m.shares || 0);
+      const rate = m.impressions &gt; 0 ? ((eng / m.impressions) * 100).toFixed(2) + &#x27;%&#x27; : &#x27;—&#x27;;
+      sh.getRange(i + 1, COL.ANAL.ENG_RATE).setValue(rate);
+      sh.getRange(i + 1, COL.ANAL.UPDATED).setValue(new Date());
+    } catch (error) {
+      logError(&#x27;refreshAnalytics: &#x27; + platform, error);
+    }
+  }
+  evaluateABTests();
+}
+
+function fetchPlatformMetrics(platform, id) {
+  switch (platform) {
+    case &#x27;instagram&#x27;:  return fetchInstagramMetrics(id);
+    case &#x27;facebook&#x27;:   return fetchFacebookMetrics(id);
+    case &#x27;linkedin&#x27;:   return fetchLinkedInMetrics(id);
+    case &#x27;twitter&#x27;:    return fetchTwitterMetrics(id);
+    case &#x27;github&#x27;:     return fetchGitHubMetrics(id);
+    default: return null;
+  }
+}
+
+function fetchInstagramMetrics(mediaId) {
+  const base = &#x27;https://graph.facebook.com/&#x27; + CONFIG.GRAPH_VERSION;
+  const res = UrlFetchApp.fetch(base + &#x27;/&#x27; + mediaId + &#x27;?fields=like_count,comments_count&amp;access_token=&#x27; + prop(&#x27;FB_ACCESS_TOKEN&#x27;), { muteHttpExceptions: true });
+  if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+  const d = JSON.parse(res.getContentText());
+  let impressions = 0;
+  try {
+    const ins = UrlFetchApp.fetch(base + &#x27;/&#x27; + mediaId + &#x27;/insights?metric=impressions&amp;access_token=&#x27; + prop(&#x27;FB_ACCESS_TOKEN&#x27;), { muteHttpExceptions: true });
+    const di = JSON.parse(ins.getContentText());
+    impressions = di.data &amp;&amp; di.data[0] ? di.data[0].values[0].value : 0;
+  } catch (e) { /* some accounts lack insights */ }
+  return { likes: d.like_count || 0, comments: d.comments_count || 0, shares: 0, impressions: impressions };
+}
+
+function fetchFacebookMetrics(postId) {
+  const base = &#x27;https://graph.facebook.com/&#x27; + CONFIG.GRAPH_VERSION;
+  const res = UrlFetchApp.fetch(base + &#x27;/&#x27; + postId + &#x27;?fields=likes.summary(true),comments.summary(true),shares,insights.metric(post_impressions)&amp;access_token=&#x27; + prop(&#x27;FB_ACCESS_TOKEN&#x27;), { muteHttpExceptions: true });
+  if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+  const d = JSON.parse(res.getContentText());
+  let impressions = 0;
+  try { impressions = d.insights.data[0].values[0].value; } catch (e) { /* */ }
+  return {
+    likes: (d.likes &amp;&amp; d.likes.summary) ? d.likes.summary.total_count : 0,
+    comments: (d.comments &amp;&amp; d.comments.summary) ? d.comments.summary.total_count : 0,
+    shares: d.shares ? d.shares.count : 0,
+    impressions: impressions
+  };
+}
+
+function fetchLinkedInMetrics(postUrn) {
+  const res = UrlFetchApp.fetch(&#x27;https://api.linkedin.com/v2/socialActions/&#x27; + encodeURIComponent(postUrn), {
+    headers: { &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + prop(&#x27;LINKEDIN_ACCESS_TOKEN&#x27;), &#x27;X-Restli-Protocol-Version&#x27;: &#x27;2.0.0&#x27;, &#x27;LinkedIn-Version&#x27;: CONFIG.LINKEDIN_API_VERSION },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+  const d = JSON.parse(res.getContentText());
+  return {
+    likes: (d.likesSummary &amp;&amp; d.likesSummary.totalLikes) || 0,
+    comments: (d.commentsSummary &amp;&amp; d.commentsSummary.totalComments) || 0,
+    shares: (d.sharesSummary &amp;&amp; d.sharesSummary.totalShares) || 0,
+    impressions: 0 //  LinkedIn     -   
+  };
+}
+
+function fetchTwitterMetrics(tweetId) {
+  const url = &#x27;https://api.twitter.com/2/tweets/&#x27; + tweetId + &#x27;?tweet.fields=public_metrics&#x27;;
+  //      ( OAuth 1.0a)
+  const res = UrlFetchApp.fetch(url, {
+    headers: { &#x27;Authorization&#x27;: twitterOAuthHeader(&#x27;GET&#x27;, &#x27;https://api.twitter.com/2/tweets/&#x27; + tweetId, { &#x27;tweet.fields&#x27;: &#x27;public_metrics&#x27; }) },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+  const m = JSON.parse(res.getContentText()).data.public_metrics;
+  return { likes: m.like_count || 0, comments: m.reply_count || 0, shares: m.retweet_count || 0, impressions: m.impression_count || 0 };
+}
+
+function fetchGitHubMetrics(issueNumber) {
+  const url = &#x27;https://api.github.com/repos/&#x27; + prop(&#x27;GITHUB_OWNER&#x27;) + &#x27;/&#x27; + prop(&#x27;GITHUB_REPO&#x27;) + &#x27;/issues/&#x27; + issueNumber;
+  const res = UrlFetchApp.fetch(url, {
+    headers: { &#x27;Authorization&#x27;: &#x27;token &#x27; + prop(&#x27;GITHUB_TOKEN&#x27;), &#x27;Accept&#x27;: &#x27;application/vnd.github.v3+json&#x27; },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() &gt;= 300) throw new Error(res.getContentText());
+  const d = JSON.parse(res.getContentText());
+  return { likes: (d.reactions &amp;&amp; d.reactions[&#x27;+1&#x27;]) || 0, comments: d.comments || 0, shares: 0, impressions: 0 };
+}
+
+// ================================================================
+//   A/B -    ( )
+// ================================================================
+function logABTest(postId, captionA, captionB) {
+  SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.AB_TEST_SHEET).appendRow([
+    postId, captionA, 0, captionB, 0, &#x27;Testing&#x27;, &#x27;—&#x27;, CONFIG.AB_TEST.platform, &#x27;Testing&#x27;, new Date()
+  ]);
+}
+
+function evaluateABTests() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.AB_TEST_SHEET);
+  if (sh.getLastRow() &lt; 2) return;
+  const analyticsSh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.ANALYTICS_SHEET);
+  const analytics = analyticsSh.getDataRange().getValues();
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i &lt; rows.length; i++) {
+    if (rows[i][COL.AB.STATUS - 1] !== &#x27;Testing&#x27;) continue;
+    const postId = rows[i][COL.AB.POST_ID - 1];
+    const platform = rows[i][COL.AB.PLATFORM - 1];
+    const started = new Date(rows[i][COL.AB.STARTED - 1]);
+    const hoursPassed = (Date.now() - started.getTime()) / 3600000;
+    if (hoursPassed &lt; CONFIG.AB_TEST.durationHours) continue;
+
+    const agg = function(filterPostId) {
+      let eng = 0, imp = 0;
+      analytics.forEach(function(r) {
+        if (r[COL.ANAL.POST_ID - 1] === filterPostId &amp;&amp; r[COL.ANAL.PLATFORM - 1] === platform) {
+          eng += Number(r[COL.ANAL.LIKES - 1] || 0) + Number(r[COL.ANAL.COMMENTS - 1] || 0) + Number(r[COL.ANAL.SHARES - 1] || 0);
+          imp += Number(r[COL.ANAL.IMPRESSIONS - 1] || 0);
+        }
+      });
+      return { eng: eng, imp: imp };
+    };
+
+    const a = agg(postId);          //  A
+    const b = agg(postId + &#x27;_B&#x27;);   //  B
+
+    if (b.eng === 0 &amp;&amp; a.eng === 0 &amp;&amp; b.imp === 0 &amp;&amp; a.imp === 0) continue; //   
+
+    //  :        
+    const rateA = a.imp &gt; 0 ? a.eng / a.imp : a.eng;
+    const rateB = b.imp &gt; 0 ? b.eng / b.imp : b.eng;
+    const winner = rateA &gt;= rateB ? &#x27;Caption A&#x27; : &#x27;Caption B&#x27;;
+    const maxR = Math.max(rateA, rateB);
+    const confidence = maxR &gt; 0 ? (Math.abs(rateA - rateB) / maxR * 100).toFixed(1) + &#x27;%&#x27; : &#x27;—&#x27;;
+
+    sh.getRange(i + 1, COL.AB.ENG_A).setValue(a.eng);
+    sh.getRange(i + 1, COL.AB.ENG_B).setValue(b.eng);
+    sh.getRange(i + 1, COL.AB.WINNER).setValue(winner);
+    sh.getRange(i + 1, COL.AB.CONFIDENCE).setValue(confidence);
+    sh.getRange(i + 1, COL.AB.STATUS).setValue(&#x27;Done&#x27;);
+
+    //       (       )
+    const mainSh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.MAIN_SHEET);
+    const mainRow = findRowByPostId(mainSh, postId);
+    if (mainRow) {
+      mainSh.getRange(mainRow, COL.MAIN.WINNER).setValue(winner === &#x27;Caption A&#x27; ? rows[i][COL.AB.CAPTION_A - 1] : rows[i][COL.AB.CAPTION_B - 1]);
+    }
+  }
+}
+
+// ================================================================
+// ================================================================
+function createDashboard() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let d = ss.getSheetByName(CONFIG.DASHBOARD_SHEET);
+  if (!d) d = ss.insertSheet(CONFIG.DASHBOARD_SHEET);
+  d.clear();
+
+  d.getRange(&#x27;A1:F1&#x27;).merge().setValue(&#x27;📊 لوحة أتمتة النشر — عبدالرحمن هوساوي&#x27;);
+  d.getRange(&#x27;A1:F1&#x27;).setBackground(&#x27;#1c3a5e&#x27;).setFontColor(&#x27;#ffffff&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(16).setHorizontalAlignment(&#x27;center&#x27;);
+
+  const main = (ss.getSheetByName(CONFIG.MAIN_SHEET) || { getLastRow: function() { return 1; } }).getLastRow() - 1;
+  const schedSh = ss.getSheetByName(CONFIG.SCHEDULING_SHEET);
+  const sched = schedSh.getLastRow() &gt; 1 ? schedSh.getDataRange().getValues() : [];
+  const analSh = ss.getSheetByName(CONFIG.ANALYTICS_SHEET);
+  const anal = analSh.getLastRow() &gt; 1 ? analSh.getDataRange().getValues() : [];
+  const abSh = ss.getSheetByName(CONFIG.AB_TEST_SHEET);
+  const ab = abSh.getLastRow() &gt; 1 ? abSh.getDataRange().getValues() : [];
+  const mainSh = ss.getSheetByName(CONFIG.MAIN_SHEET);
+  const mainData = mainSh.getLastRow() &gt; 1 ? mainSh.getDataRange().getValues() : [];
+
+  d.getRange(&#x27;A3&#x27;).setValue(&#x27;📝 إحصاءات النشر&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(13);
+  const posted = mainData.filter(function(r) { return String(r[COL.MAIN.STATUS - 1]).indexOf(&#x27;✅&#x27;) === 0; }).length;
+  const failed = mainData.filter(function(r) { return String(r[COL.MAIN.STATUS - 1]).indexOf(&#x27;❌&#x27;) === 0; }).length;
+  const partial = mainData.filter(function(r) { return String(r[COL.MAIN.STATUS - 1]).indexOf(&#x27;⚠️&#x27;) === 0; }).length;
+  const scheduled = sched.filter(function(r) { return r[COL.SCHED.STATUS - 1] === &#x27;Pending&#x27;; }).length;
+  d.getRange(&#x27;A4:B8&#x27;).setValues([
+    [&#x27;إجمالي المنشورات:&#x27;, main], [&#x27;✅ ناجحة:&#x27;, posted], [&#x27;⚠️ جزئية:&#x27;, partial],
+    [&#x27;❌ فاشلة:&#x27;, failed], [&#x27;⏰ مجدولة:&#x27;, scheduled]
+  ]);
+  if (main &gt; 0) d.getRange(&#x27;B9&#x27;).setValue(&#x27;نسبة النجاح: &#x27; + ((posted / main) * 100).toFixed(0) + &#x27;%&#x27;);
+
+  d.getRange(&#x27;D3&#x27;).setValue(&#x27;🌐 أداء المنصات&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(13);
+  d.getRange(&#x27;D4:F4&#x27;).setValues([[&#x27;المنصة&#x27;, &#x27;منشورات&#x27;, &#x27;تفاعل&#x27;]]);
+  d.getRange(&#x27;D4:F4&#x27;).setFontWeight(&#x27;bold&#x27;);
+  const platforms = [&#x27;linkedin&#x27;, &#x27;github&#x27;, &#x27;twitter&#x27;, &#x27;instagram&#x27;, &#x27;facebook&#x27;];
+  const stats = platforms.map(function(p) {
+    const rowsP = anal.filter(function(r) { return r[COL.ANAL.PLATFORM - 1] === p; });
+    const eng = rowsP.reduce(function(s, r) {
+      return s + Number(r[COL.ANAL.LIKES - 1] || 0) + Number(r[COL.ANAL.COMMENTS - 1] || 0) + Number(r[COL.ANAL.SHARES - 1] || 0);
+    }, 0);
+    return [p, rowsP.length, eng];
+  });
+  d.getRange(5, 4, stats.length, 3).setValues(stats);
+
+  d.getRange(&#x27;A12&#x27;).setValue(&#x27;🧪 اختبارات A/B&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(13);
+  const done = ab.filter(function(r) { return r[COL.AB.STATUS - 1] === &#x27;Done&#x27;; });
+  const aWins = done.filter(function(r) { return r[COL.AB.WINNER - 1] === &#x27;Caption A&#x27;; }).length;
+  d.getRange(&#x27;A13:B15&#x27;).setValues([
+    [&#x27;اختبارات مكتملة:&#x27;, done.length],
+    [&#x27;فوز A:&#x27;, aWins],
+    [&#x27;فوز B:&#x27;, done.length - aWins]
+  ]);
+
+  d.getRange(&#x27;A17&#x27;).setValue(&#x27;⏱️ آخر النشاطات&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(13);
+  d.getRange(&#x27;A18:C18&#x27;).setValues([[&#x27;التاريخ&#x27;, &#x27;الملف&#x27;, &#x27;الحالة&#x27;]]);
+  d.getRange(&#x27;A18:C18&#x27;).setFontWeight(&#x27;bold&#x27;);
+  const recent = mainData.slice(-5).reverse().map(function(r) {
+    const t = r[COL.MAIN.TIMESTAMP - 1];
+    return [t ? Utilities.formatDate(new Date(t), CONFIG.TIMEZONE, &#x27;MM/dd HH:mm&#x27;) : &#x27;&#x27;, r[COL.MAIN.FILE_NAME - 1], r[COL.MAIN.STATUS - 1]];
+  });
+  if (recent.length) d.getRange(19, 1, recent.length, 3).setValues(recent);
+
+  d.getRange(&#x27;D17&#x27;).setValue(&#x27;📅 المنشورات القادمة&#x27;).setFontWeight(&#x27;bold&#x27;).setFontSize(13);
+  d.getRange(&#x27;D18:E18&#x27;).setValues([[&#x27;الوقت&#x27;, &#x27;Post ID&#x27;]]);
+  d.getRange(&#x27;D18:E18&#x27;).setFontWeight(&#x27;bold&#x27;);
+  const upcoming = sched.filter(function(r) { return r[COL.SCHED.STATUS - 1] === &#x27;Pending&#x27; &amp;&amp; new Date(r[COL.SCHED.TIME - 1]) &gt; new Date(); })
+    .sort(function(x, y) { return new Date(x[COL.SCHED.TIME - 1]) - new Date(y[COL.SCHED.TIME - 1]); })
+    .slice(0, 5)
+    .map(function(r) { return [Utilities.formatDate(new Date(r[COL.SCHED.TIME - 1]), CONFIG.TIMEZONE, &#x27;MM/dd HH:mm&#x27;), r[COL.SCHED.POST_ID - 1]]; });
+  if (upcoming.length) d.getRange(19, 4, upcoming.length, 2).setValues(upcoming);
+
+  d.getRange(&#x27;A26&#x27;).setValue(&#x27;آخر تحديث:&#x27;).setFontWeight(&#x27;bold&#x27;);
+  d.getRange(&#x27;B26&#x27;).setValue(new Date());
+  d.autoResizeColumns(1, 6);
+}
+
+function updateDashboard() { createDashboard(); }
+
+// ================================================================
+// ================================================================
+function moveFile(file, targetFolderId) {
+  file.moveTo(DriveApp.getFolderById(targetFolderId)); //    removeFile/addFile 
+}
+
+function logError(source, error) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(CONFIG.ERROR_LOG_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(CONFIG.ERROR_LOG_SHEET);
+    sh.appendRow([&#x27;Timestamp&#x27;, &#x27;Source&#x27;, &#x27;Error Message&#x27;, &#x27;Stack Trace&#x27;]);
+  }
+  sh.appendRow([new Date(), source, String(error), (error &amp;&amp; error.stack) || &#x27;N/A&#x27;]);
+  Logger.log(source + &#x27;: &#x27; + error);
+}
+
+function sendNotification(subject, message, type) {
+  const emoji = { success: &#x27;✅&#x27;, error: &#x27;❌&#x27;, warning: &#x27;⚠️&#x27;, info: &#x27;ℹ️&#x27; };
+  const email = prop(&#x27;NOTIFICATION_EMAIL&#x27;);
+  let sheetUrl = &#x27;&#x27;;
+  try { sheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl() || &#x27;&#x27;; } catch (e) { /* standalone script */ }
+  const body = message + &#x27;\n\nالوقت: &#x27; + new Date() + &#x27;\nالجدول: &#x27; + sheetUrl;
+  if (email) {
+    try { MailApp.sendEmail(email, (emoji[type] || &#x27;&#x27;) + &#x27; أتمتة النشر: &#x27; + subject, body); }
+    catch (e) { logError(&#x27;sendNotification&#x27;, e); }
+  }
+  const hook = prop(&#x27;SLACK_WEBHOOK&#x27;);
+  if (hook) {
+    try {
+      UrlFetchApp.fetch(hook, {
+        method: &#x27;post&#x27;, contentType: &#x27;application/json&#x27;,
+        payload: JSON.stringify({ text: (emoji[type] || &#x27;&#x27;) + &#x27; *&#x27; + subject + &#x27;*\n&#x27; + message })
+      });
+    } catch (e) { logError(&#x27;Slack&#x27;, e); }
+  }
+}
+
+// ================================================================
+// ================================================================
+function setupAllTriggers() {
+  ScriptApp.getProjectTriggers().forEach(function(t) { ScriptApp.deleteTrigger(t); });
+
+  ScriptApp.newTrigger(&#x27;scanDriveAndPost&#x27;).timeBased().everyMinutes(15).create();
+  ScriptApp.newTrigger(&#x27;refreshAnalytics&#x27;).timeBased().everyHours(1).create();
+  ScriptApp.newTrigger(&#x27;updateDashboard&#x27;).timeBased().everyHours(6).create();
+  ScriptApp.newTrigger(&#x27;evaluateABTests&#x27;).timeBased().atHour(20).everyDays(1).create();
+
+  sendNotification(&#x27;المشغّلات مثبتة&#x27;, &#x27;المسح كل 15 دقيقة، التحليلات كل ساعة، اللوحة كل 6 ساعات.&#x27;, &#x27;success&#x27;);
+}
+
+// ================================================================
+// ================================================================
+function testAICaption() {
+  Logger.log(JSON.stringify(generateAICaptions(&#x27;test-deep-work.png&#x27;, null), null, 2));
+}
+
+function testGitHubPost() {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToGitHub(blob, &#x27;اختبار نشر من نظام الأتمتة 🤖&#x27;, &#x27;TEST_GH&#x27;), null, 2));
+}
+
+function testLinkedInPost() {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToLinkedIn(blob, &#x27;اختبار نشر من نظام الأتمتة 🤖 — سيُحذف يدوياً&#x27;, &#x27;TEST_LI&#x27;), null, 2));
+}
+
+function testFacebookPost() {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToFacebook(blob, &#x27;Test post from automation 🤖&#x27;, &#x27;TEST_FB&#x27;), null, 2));
+}
+
+function testInstagramPost() {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToInstagram(blob, &#x27;Test post from automation 🤖&#x27;, &#x27;TEST_IG&#x27;), null, 2));
+}
+
+function testTwitterPost() {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToTwitter(blob, &#x27;Test post from automation 🤖&#x27;, &#x27;TEST_TW&#x27;), null, 2));
+}
+
+function debugPost(platform) {
+  const blob = UrlFetchApp.fetch(&#x27;https://picsum.photos/1080/1080&#x27;).getBlob();
+  Logger.log(JSON.stringify(postToPlatform(platform, blob, &#x27;Debug test post&#x27;, &#x27;DEBUG_001&#x27;), null, 2));
+}
+
+
+/* ============ SECTION 2: Life Pulse PUBLISH_QUEUE bridge ============ */
+
+const LP = {
+  //   Life Pulse -    Script Property  LIFEPULSE_SHEET_ID
+  SHEET_ID: &#x27;1E57MbTJWKkr8E0J5_pbhZPyBX9XuZvtZ8T0jH4YjWNQ&#x27;,
+  QUEUE_TAB: &#x27;PUBLISH_QUEUE&#x27;,        //    PUBLISH_QUEUE_TAB
+  REQUIRE_APPROVAL: true,            //    Approval = Approved
+  IMPORT_AUTO_APPROVE: false,        //   CONTENT_LIBRARY  Approval    
+  READY_STATUSES: [&#x27;ready&#x27;, &#x27;approved&#x27;, &#x27;&#x27;],
+  DISCLAIMER: &#x27;محتوى تثقيفي ولا يغني عن تقييم مختص.&#x27;,
+  APPEND_HASHTAGS: true,
+  LINKEDIN_MAX_CHARS: 3000,
+  TWITTER_MAX_CHARS: 280
+};
+
+/**  PUBLISH_QUEUE (1-based) -     */
+const COLQ = {
+  QUEUE_ID: 1, CONTENT_ID: 2, TITLE: 3, PLATFORM: 4, FORMAT: 5,
+  HOOK: 6, CAPTION: 7, CAPTION_EN: 8, CTA: 9, HASHTAGS: 10,
+  MEDIA: 11, COVER: 12, MUSIC: 13, DATE: 14, TIME: 15,
+  STATUS: 16, APPROVAL: 17, BUFFER: 18, NOTES: 19, DM: 20,
+  POSTED_URL: 21,   //    
+  POSTED_AT: 22,    //    
+  LAST_ERROR: 23    //    
+};
+
+// ================================================================
+//    -     10 
+// ================================================================
+function processLifePulseQueue() {
+  const sh = lpGetQueueSheet();
+  const lastRow = sh.getLastRow();
+  if (lastRow &lt; 2) return;
+
+  const data = sh.getRange(2, 1, lastRow - 1, COLQ.LAST_ERROR).getValues();
+  const now = new Date();
+  let posted = 0, failed = 0, skipped = 0;
+
+  for (let i = 0; i &lt; data.length; i++) {
+    const r = data[i];
+    const row = i + 2; //     
+    const status = String(r[COLQ.STATUS - 1] || &#x27;&#x27;).trim();
+    const approval = String(r[COLQ.APPROVAL - 1] || &#x27;&#x27;).trim();
+    const platform = lpNormalizePlatform(r[COLQ.PLATFORM - 1]);
+    const queueId = r[COLQ.QUEUE_ID - 1];
+
+    if (!queueId || status.toLowerCase() === &#x27;posted&#x27;) continue;
+
+    //   1: 
+    if (LP.READY_STATUSES.indexOf(status.toLowerCase()) === -1) { skipped++; continue; }
+
+    //   2: 
+    if (LP.REQUIRE_APPROVAL &amp;&amp; approval.toLowerCase() !== &#x27;approved&#x27;) { skipped++; continue; }
+
+    //   3:  
+    const due = lpParseDueDate(r[COLQ.DATE - 1], r[COLQ.TIME - 1]);
+    if (!due) { skipped++; continue; }
+    if (due &gt; now) { skipped++; continue; }
+
+    const caption = lpBuildCaption(r);
+    if (!caption) {
+      lpMarkFailed(sh, row, &#x27;لا يوجد نص (Hook/Caption فارغون)&#x27;);
+      failed++;
+      continue;
+    }
+
+    //  (  )
+    let blob = null;
+    try {
+      blob = lpGetMediaBlob(r[COLQ.MEDIA - 1]);
+    } catch (e) {
+      lpMarkFailed(sh, row, &#x27;تعذّر جلب الوسائط: &#x27; + e);
+      failed++;
+      continue;
+    }
+    if (!blob &amp;&amp; platform === &#x27;instagram&#x27;) {
+      lpMarkFailed(sh, row, &#x27;إنستغرام يتطلب Media_URL — لا ينشر نصاً فقط&#x27;);
+      failed++;
+      continue;
+    }
+
+    try {
+      const result = lpPost(platform, blob, caption, String(queueId));
+      if (result.success) {
+        sh.getRange(row, COLQ.STATUS).setValue(&#x27;Posted&#x27;);
+        sh.getRange(row, COLQ.POSTED_URL).setValue(result.url || &#x27;&#x27;);
+        sh.getRange(row, COLQ.POSTED_AT).setValue(new Date());
+        posted++;
+        sendNotification(&#x27;نُشر من طابور Life Pulse&#x27;, String(queueId) + &#x27; → &#x27; + platform + &#x27;\n&#x27; + (result.url || &#x27;&#x27;), &#x27;success&#x27;);
+      } else {
+        lpMarkFailed(sh, row, result.error || &#x27;فشل غير معروف&#x27;);
+        failed++;
+      }
+    } catch (error) {
+      lpMarkFailed(sh, row, String(error));
+      failed++;
+      logError(&#x27;LifePulse &#x27; + queueId, error);
+    }
+  }
+
+  Logger.log(&#x27;Life Pulse queue: posted=&#x27; + posted + &#x27; failed=&#x27; + failed + &#x27; skipped=&#x27; + skipped);
+}
+
+// ================================================================
+//    +  
+// ================================================================
+function lpGetQueueSheet() {
+  const sheetId = prop(&#x27;LIFEPULSE_SHEET_ID&#x27;, LP.SHEET_ID);
+  const tabName = prop(&#x27;PUBLISH_QUEUE_TAB&#x27;, LP.QUEUE_TAB);
+  const ss = SpreadsheetApp.openById(sheetId);
+  const sh = ss.getSheetByName(tabName);
+  if (!sh) throw new Error(&#x27;تبويب &#x27; + tabName + &#x27; غير موجود في جدول Life Pulse&#x27;);
+  return sh;
+}
+
+/**       -      */
+function testLifePulseConnection() {
+  const sh = lpGetQueueSheet();
+  const headers = sh.getRange(1, 1, 1, COLQ.DM).getValues()[0];
+  const expected = [&#x27;Queue_ID&#x27;, &#x27;Content_ID&#x27;, &#x27;Post_Title&#x27;, &#x27;Platform&#x27;, &#x27;Format&#x27;,
+    &#x27;Hook_AR&#x27;, &#x27;Caption_AR&#x27;, &#x27;Caption_EN&#x27;, &#x27;CTA_AR&#x27;, &#x27;Hashtags&#x27;, &#x27;Media_URL&#x27;,
+    &#x27;Cover_Text&#x27;, &#x27;Music_Direction&#x27;, &#x27;Scheduled_Date&#x27;, &#x27;Scheduled_Time_KSA&#x27;,
+    &#x27;Status&#x27;, &#x27;Approval&#x27;, &#x27;Buffer_Post_Text&#x27;, &#x27;Internal_Notes&#x27;, &#x27;DM_Reply_Template&#x27;];
+  const issues = [];
+  expected.forEach(function(name, idx) {
+    if (String(headers[idx] || &#x27;&#x27;).trim() !== name) {
+      issues.push(&#x27;العمود &#x27; + String.fromCharCode(65 + idx) + &#x27;: متوقع &quot;&#x27; + name + &#x27;&quot; موجود &quot;&#x27; + headers[idx] + &#x27;&quot;&#x27;);
+    }
+  });
+  const lastRow = sh.getLastRow();
+  let ready = 0, approved = 0;
+  if (lastRow &gt; 1) {
+    const d = sh.getRange(2, 1, lastRow - 1, COLQ.LAST_ERROR).getValues();
+    d.forEach(function(r) {
+      if (LP.READY_STATUSES.indexOf(String(r[COLQ.STATUS - 1] || &#x27;&#x27;).trim().toLowerCase()) !== -1) ready++;
+      if (String(r[COLQ.APPROVAL - 1] || &#x27;&#x27;).trim().toLowerCase() === &#x27;approved&#x27;) approved++;
+    });
+  }
+  const msg = &#x27;الاتصال ناجح ✅\nالصفوف: &#x27; + Math.max(lastRow - 1, 0) +
+    &#x27;\nجاهزة (Status): &#x27; + ready + &#x27;\nمعتمدة (Approval): &#x27; + approved +
+    (issues.length ? &#x27;\n\n⚠️ مشاكل الأعمدة:\n&#x27; + issues.join(&#x27;\n&#x27;) : &#x27;\n\nكل الأعمدة مطابقة ✅&#x27;);
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* من المحرر */ }
+  return msg;
+}
+
+// ================================================================
+//    - Hook  Caption  CTA     
+// ================================================================
+function lpBuildCaption(r) {
+  const parts = [];
+  const hook = String(r[COLQ.HOOK - 1] || &#x27;&#x27;).trim();
+  const caption = String(r[COLQ.CAPTION - 1] || &#x27;&#x27;).trim();
+  const cta = String(r[COLQ.CTA - 1] || &#x27;&#x27;).trim();
+  const tags = String(r[COLQ.HASHTAGS - 1] || &#x27;&#x27;).trim();
+
+  //   = Hook (  see more  )
+  if (hook) parts.push(hook);
+  if (caption) parts.push(caption);
+  if (cta) parts.push(cta);
+  if (LP.APPEND_HASHTAGS &amp;&amp; tags) parts.push(tags);
+  parts.push(&#x27;—\n&#x27; + LP.DISCLAIMER);
+
+  const text = parts.join(&#x27;\n\n&#x27;);
+  return text.length &gt; LP.LINKEDIN_MAX_CHARS
+    ? text.substring(0, LP.LINKEDIN_MAX_CHARS - 1) + &#x27;…&#x27;
+    : text;
+}
+
+function lpNormalizePlatform(v) {
+  const p = String(v || &#x27;&#x27;).trim().toLowerCase();
+  if (p === &#x27;x&#x27; || p === &#x27;twitter&#x27; || p.indexOf(&#x27;تويتر&#x27;) !== -1 || p === &#x27;تويتر&#x27;) return &#x27;twitter&#x27;;
+  if (p === &#x27;linkedin&#x27; || p === &#x27;لينكدن&#x27; || p === &#x27;لينكدين&#x27;) return &#x27;linkedin&#x27;;
+  if (p === &#x27;instagram&#x27; || p === &#x27;إنستغرام&#x27; || p === &#x27;انستقرام&#x27; || p === &#x27;انستغرام&#x27;) return &#x27;instagram&#x27;;
+  if (p === &#x27;facebook&#x27; || p === &#x27;فيسبوك&#x27;) return &#x27;facebook&#x27;;
+  if (p === &#x27;github&#x27; || p === &#x27;جيت هاب&#x27;) return &#x27;github&#x27;;
+  return p;
+}
+
+// ================================================================
+//    (  = Asia/Riyadh   manifest)
+// ================================================================
+function lpParseDueDate(dateVal, timeVal) {
+  if (!dateVal &amp;&amp; !timeVal) return null;
+
+  let y, mo, d, hh = 0, mm = 0;
+
+  if (Object.prototype.toString.call(dateVal) === &#x27;[object Date]&#x27; &amp;&amp; !isNaN(dateVal)) {
+    y = dateVal.getFullYear(); mo = dateVal.getMonth(); d = dateVal.getDate();
+  } else if (dateVal) {
+    const s = String(dateVal).trim().split(/[\/\-\.]/);
+    if (s.length &lt; 3) return null;
+    y = parseInt(s[0], 10); mo = parseInt(s[1], 10) - 1; d = parseInt(s[2], 10);
+  } else {
+    const t = new Date(); y = t.getFullYear(); mo = t.getMonth(); d = t.getDate();
+  }
+
+  if (Object.prototype.toString.call(timeVal) === &#x27;[object Date]&#x27; &amp;&amp; !isNaN(timeVal)) {
+    hh = timeVal.getHours(); mm = timeVal.getMinutes();
+  } else if (timeVal) {
+    const tp = String(timeVal).trim().match(/^(\d{1,2})[:\.](\d{2})/);
+    if (tp) { hh = parseInt(tp[1], 10); mm = parseInt(tp[2], 10); }
+  }
+
+  const due = new Date(y, mo, d, hh, mm);
+  return isNaN(due.getTime()) ? null : due;
+}
+
+// ================================================================
+//    Drive
+// ================================================================
+function lpGetMediaBlob(mediaVal) {
+  if (!mediaVal) return null;
+  const s = String(mediaVal).trim();
+  if (!s || s.toLowerCase() === &#x27;n/a&#x27; || s.toLowerCase() === &#x27;tbd&#x27;) return null;
+
+  //       Drive 
+  let id = s;
+  const m = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || s.match(/[?&amp;]id=([a-zA-Z0-9_-]+)/) ||
+            s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) id = m[1];
+  return DriveApp.getFileById(id).getBlob();
+}
+
+// ================================================================
+//     -      
+// ================================================================
+function lpPost(platform, blob, caption, queueId) {
+  switch (platform) {
+    case &#x27;linkedin&#x27;:  return blob ? postToLinkedIn(blob, caption, queueId) : lpLinkedInText(caption, queueId);
+    case &#x27;twitter&#x27;:   return blob ? postToTwitter(blob, lpClipTwitter(caption), queueId) : lpTwitterText(caption, queueId);
+    case &#x27;facebook&#x27;:  return blob ? postToFacebook(blob, caption, queueId) : lpFacebookText(caption, queueId);
+    case &#x27;instagram&#x27;: return postToInstagram(blob, caption, queueId);
+    case &#x27;github&#x27;:    return postToGitHub(blob, caption, queueId);
+    default:
+      return { success: false, url: &#x27;&#x27;, error: &#x27;منصة غير مدعومة: &quot;&#x27; + platform + &#x27;&quot; — المدعوم: LinkedIn, Instagram, Facebook, X, GitHub&#x27; };
+  }
+}
+
+function lpClipTwitter(caption) {
+  return caption.length &gt; LP.TWITTER_MAX_CHARS
+    ? caption.substring(0, LP.TWITTER_MAX_CHARS - 1) + &#x27;…&#x27;
+    : caption;
+}
+
+/**    ( ) */
+function lpLinkedInText(caption, postId) {
+  try {
+    const owner = getLinkedInUrn();
+    const res = UrlFetchApp.fetch(&#x27;https://api.linkedin.com/v2/ugcPosts&#x27;, {
+      method: &#x27;post&#x27;,
+      headers: {
+        &#x27;Authorization&#x27;: &#x27;Bearer &#x27; + prop(&#x27;LINKEDIN_ACCESS_TOKEN&#x27;),
+        &#x27;Content-Type&#x27;: &#x27;application/json&#x27;,
+        &#x27;X-Restli-Protocol-Version&#x27;: &#x27;2.0.0&#x27;,
+        &#x27;LinkedIn-Version&#x27;: CONFIG.LINKEDIN_API_VERSION
+      },
+      payload: JSON.stringify({
+        author: owner,
+        lifecycleState: &#x27;PUBLISHED&#x27;,
+        specificContent: {
+          &#x27;com.linkedin.ugc.ShareContent&#x27;: {
+            shareCommentary: { text: caption },
+            shareMediaCategory: &#x27;NONE&#x27;
+          }
+        },
+        visibility: { &#x27;com.linkedin.ugc.MemberNetworkVisibility&#x27;: &#x27;PUBLIC&#x27; }
+      }),
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() &gt;= 300) throw new Error(&#x27;ugcPosts text: &#x27; + res.getContentText());
+    const urn = JSON.parse(res.getContentText()).id;
+    return { success: true, url: &#x27;https://www.linkedin.com/feed/update/&#x27; + urn, postId: urn };
+  } catch (error) {
+    logError(&#x27;LinkedIn text&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, error: String(error) };
+  }
+}
+
+/**     */
+function lpTwitterText(caption, postId) {
+  try {
+    const url = &#x27;https://api.twitter.com/2/tweets&#x27;;
+    const res = UrlFetchApp.fetch(url, {
+      method: &#x27;post&#x27;,
+      headers: { &#x27;Authorization&#x27;: twitterOAuthHeader(&#x27;POST&#x27;, url, {}), &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      payload: JSON.stringify({ text: lpClipTwitter(caption) }),
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() &gt;= 300) throw new Error(&#x27;tweet text: &#x27; + res.getContentText());
+    const id = JSON.parse(res.getContentText()).data.id;
+    return { success: true, url: &#x27;https://twitter.com/i/web/status/&#x27; + id, postId: id };
+  } catch (error) {
+    logError(&#x27;Twitter text&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, error: String(error) };
+  }
+}
+
+/**     /feed (  message) */
+function lpFacebookText(caption, postId) {
+  try {
+    const base = &#x27;https://graph.facebook.com/&#x27; + CONFIG.GRAPH_VERSION;
+    const res = UrlFetchApp.fetch(base + &#x27;/&#x27; + prop(&#x27;FB_PAGE_ID&#x27;) + &#x27;/feed&#x27;, {
+      method: &#x27;post&#x27;,
+      payload: { message: caption, access_token: prop(&#x27;FB_ACCESS_TOKEN&#x27;) },
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() &gt;= 300) throw new Error(&#x27;FB feed: &#x27; + res.getContentText());
+    const id = JSON.parse(res.getContentText()).id;
+    return { success: true, url: &#x27;https://www.facebook.com/&#x27; + id, postId: id };
+  } catch (error) {
+    logError(&#x27;Facebook text&#x27;, error);
+    return { success: false, url: &#x27;&#x27;, error: String(error) };
+  }
+}
+
+// ================================================================
+// ================================================================
+function lpMarkFailed(sh, row, message) {
+  sh.getRange(row, COLQ.STATUS).setValue(&#x27;Failed&#x27;);
+  sh.getRange(row, COLQ.LAST_ERROR).setValue(String(message).substring(0, 500));
+}
+
+// ================================================================
+//    -  10 
+// ================================================================
+function lpInstallTrigger() {
+  const existing = ScriptApp.getProjectTriggers();
+  existing.forEach(function(t) {
+    if (t.getHandlerFunction() === &#x27;processLifePulseQueue&#x27;) ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger(&#x27;processLifePulseQueue&#x27;).timeBased().everyMinutes(10).create();
+  sendNotification(&#x27;جسر Life Pulse مثبت&#x27;, &#x27;معالجة الطابور كل 10 دقائق&#x27;, &#x27;success&#x27;);
+}
+
+// ================================================================
+//    CONTENT_LIBRARY -&gt; PUBLISH_QUEUE
+//  (  Queue approved ideas   )
+//       +   Content_ID
+// ================================================================
+function lpQueueApprovedIdeas() {
+  const ss = SpreadsheetApp.openById(prop(&#x27;LIFEPULSE_SHEET_ID&#x27;, LP.SHEET_ID));
+  const lib = ss.getSheetByName(prop(&#x27;CONTENT_LIBRARY_TAB&#x27;, &#x27;CONTENT_LIBRARY&#x27;));
+  if (!lib || lib.getLastRow() &lt; 2) {
+    Logger.log(&#x27;CONTENT_LIBRARY فارغ أو غير موجود&#x27;);
+    try { SpreadsheetApp.getUi().alert(&#x27;تبويب CONTENT_LIBRARY فارغ أو غير موجود.&#x27;); } catch (e) { /* */ }
+    return 0;
+  }
+  const queue = lpGetQueueSheet();
+
+  //      (    )
+  const heads = lib.getRange(1, 1, 1, lib.getLastColumn()).getValues()[0]
+    .map(function(h) { return String(h || &#x27;&#x27;).toUpperCase().replace(/[^A-Z0-9]/g, &#x27;&#x27;); });
+  const find = function(exact, contains, exclude) {
+    for (let i = 0; i &lt; heads.length; i++) {
+      if (exact &amp;&amp; heads[i] === exact) return i;
+    }
+    for (let i = 0; i &lt; heads.length; i++) {
+      if (contains &amp;&amp; heads[i].indexOf(contains) !== -1 &amp;&amp; (!exclude || heads[i].indexOf(exclude) === -1)) return i;
+    }
+    return -1;
+  };
+  const C = {
+    status:    find(&#x27;STATUS&#x27;),
+    contentId: find(&#x27;CONTENTID&#x27;, &#x27;CONTENTID&#x27;),
+    title:     find(&#x27;POSTTITLE&#x27;, &#x27;TITLE&#x27;),
+    platform:  find(&#x27;PLATFORM&#x27;),
+    format:    find(&#x27;FORMAT&#x27;),
+    hook:      find(null, &#x27;HOOK&#x27;),
+    captionAr: find(&#x27;CAPTIONAR&#x27;, &#x27;CAPTION&#x27;, &#x27;EN&#x27;),
+    captionEn: find(&#x27;CAPTIONEN&#x27;, &#x27;CAPTIONEN&#x27;),
+    cta:       find(null, &#x27;CTA&#x27;),
+    hashtags:  find(null, &#x27;HASHTAG&#x27;),
+    media:     find(&#x27;MEDIAURL&#x27;, &#x27;MEDIA&#x27;, &#x27;DIRECTION&#x27;),
+    cover:     find(null, &#x27;COVER&#x27;),
+    music:     find(null, &#x27;MUSIC&#x27;)
+  };
+
+  if (C.status === -1) {
+    Logger.log(&#x27;لم أجد عمود Status في CONTENT_LIBRARY — أوقف الاستيراد احتياطاً&#x27;);
+    try { SpreadsheetApp.getUi().alert(&#x27;لم أجد عمود Status في CONTENT_LIBRARY — الاستيراد موقوف احتياطاً.&#x27;); } catch (e) { /* */ }
+    return 0;
+  }
+
+  //  :     
+  const existingIds = {};
+  if (queue.getLastRow() &gt; 1) {
+    queue.getRange(2, 1, queue.getLastRow() - 1, 2).getValues().forEach(function(r) {
+      if (r[1] !== &#x27;&#x27;) existingIds[String(r[1])] = true;
+    });
+  }
+
+  const rows = lib.getRange(2, 1, lib.getLastRow() - 1, lib.getLastColumn()).getValues();
+  const picks = rows.filter(function(r) {
+    if (r[C.status] === undefined || String(r[C.status]).trim().toLowerCase() !== &#x27;approved&#x27;) return false;
+    const cid = C.contentId !== -1 ? String(r[C.contentId] || &#x27;&#x27;) : &#x27;&#x27;;
+    return !(cid &amp;&amp; existingIds[cid]);
+  });
+
+  if (!picks.length) {
+    Logger.log(&#x27;لا أفكار معتمدة جديدة للاستيراد&#x27;);
+    try { SpreadsheetApp.getUi().alert(&#x27;لا توجد أفكار معتمدة جديدة (كل المعتمد مستورد سابقاً).&#x27;); } catch (e) { /* */ }
+    return 0;
+  }
+
+  //  Queue_ID 
+  let nextId = 1;
+  if (queue.getLastRow() &gt; 1) {
+    queue.getRange(2, 1, queue.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      const n = parseInt(r[0], 10);
+      if (!isNaN(n) &amp;&amp; n &gt;= nextId) nextId = n + 1;
+    });
+  }
+
+  const out = picks.map(function(r) {
+    const g = function(idx) { return idx !== -1 &amp;&amp; r[idx] !== undefined ? r[idx] : &#x27;&#x27;; };
+    const row = new Array(COLQ.LAST_ERROR).fill(&#x27;&#x27;);
+    row[COLQ.QUEUE_ID - 1] = nextId++;
+    row[COLQ.CONTENT_ID - 1] = g(C.contentId);
+    row[COLQ.TITLE - 1] = g(C.title);
+    row[COLQ.PLATFORM - 1] = g(C.platform);
+    row[COLQ.FORMAT - 1] = g(C.format);
+    row[COLQ.HOOK - 1] = g(C.hook);
+    row[COLQ.CAPTION - 1] = g(C.captionAr);
+    row[COLQ.CAPTION_EN - 1] = g(C.captionEn);
+    row[COLQ.CTA - 1] = g(C.cta);
+    row[COLQ.HASHTAGS - 1] = g(C.hashtags);
+    row[COLQ.MEDIA - 1] = g(C.media);
+    row[COLQ.COVER - 1] = g(C.cover);
+    row[COLQ.MUSIC - 1] = g(C.music);
+    row[COLQ.STATUS - 1] = &#x27;Ready&#x27;;
+    row[COLQ.APPROVAL - 1] = LP.IMPORT_AUTO_APPROVE ? &#x27;Approved&#x27; : &#x27;&#x27;;
+    return row;
+  });
+
+  queue.getRange(queue.getLastRow() + 1, 1, out.length, COLQ.LAST_ERROR).setValues(out);
+
+  const msg = &#x27;استُوردت &#x27; + out.length + &#x27; فكرة إلى PUBLISH_QUEUE.\n\n&#x27; +
+    &#x27;متبقٍ عليك لكل صف: تعبئة Scheduled_Date + Scheduled_Time_KSA،\n&#x27; +
+    &#x27;ووضع Approval = Approved بعد مراجعة الوسائط&#x27; +
+    (LP.IMPORT_AUTO_APPROVE ? &#x27;&#x27; : &#x27; (الاستيراد لا يعتمد تلقائياً عمداً).&#x27;);
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* من المحرر */ }
+  return out.length;
+}
+
+</textarea>
+ <div class="small">لو زر النسخ لم يعمل في متصفحك: اضغط داخل الصندوق ← Ctrl+A ← Ctrl+C.</div>
+</div>
+<script>
+function copyCode(){
+ var t=document.getElementById('code');
+ t.focus(); t.select();
+ try{ navigator.clipboard.writeText(t.value); }catch(e){}
+ try{ document.execCommand('copy'); }catch(e){}
+ var d=document.getElementById('done'); d.style.display='inline';
+ setTimeout(function(){ d.style.display='none'; },4000);
+}
+</script>
+</body>
+</html>
