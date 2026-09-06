@@ -20,3 +20,7 @@ npm-debug.log*
 .vercel
 *.tsbuildinfo
 /posters/
+
+# Created via the GitHub web UI by the owner (Arena's app can't push
+# workflow files without the 'workflows' permission).
+.github/workflows/publish.yml
