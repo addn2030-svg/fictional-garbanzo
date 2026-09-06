@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garbanzo — post once, go live everywhere</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0a0a0a; color: #e5e5e4;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(163,230,53,.07), transparent);
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px;
+    height: 56px; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,.1);
+    background: rgba(10,10,10,.8); backdrop-filter: blur(8px);
+  }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #fff; cursor: pointer; }
+  .logo .bean { width: 32px; height: 32px; border-radius: 10px; background: #a3e635; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo small { font-size: 9px; letter-spacing: .12em; color: #a3e635; font-weight: 600; text-transform: uppercase; }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav button {
+    border: 0; background: transparent; color: #a3a3a3; font-size: 14px; font-weight: 500;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; position: relative;
+  }
+  nav button.active { background: rgba(255,255,255,.1); color: #fff; }
+  nav button:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .livecount { background: #ef4444; color: #fff; border-radius: 999px; font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: 4px; }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    border: 1px solid rgba(52,211,153,.3); background: rgba(52,211,153,.1); color: #34d399;
+    border-radius: 999px; padding: 4px 10px; }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; position: relative; }
+  .status .dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #34d399; animation: ping 1.6s infinite; }
+  @keyframes ping { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+  .reset { border: 1px solid rgba(255,255,255,.15); background: transparent; color: #737373; font-size: 11px; border-radius: 8px; padding: 4px 8px; cursor: pointer; }
+  .reset:hover { color: #ef4444; border-color: rgba(239,68,68,.4); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 40px; }
+  .card { background: rgba(23,23,23,.75); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .feed { display: flex; flex-direction: column; gap: 16px; }
+  .phead { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .pmeta { min-width: 0; flex: 1; line-height: 1.25; }
+  .pname { font-size: 14px; font-weight: 600; color: #fff; }
+  .phandle { color: #737373; font-size: 12px; font-weight: 400; }
+  .ptime { color: #737373; font-size: 12px; }
+  .livefor { color: #f87171; font-weight: 600; }
+  .pbadges { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .badge { font-size: 10px; font-weight: 700; letter-spacing: .1em; border-radius: 999px; padding: 2px 8px; }
+  .badge.live { background: #ef4444; color: #fff; animation: glow 1.6s infinite; }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.45);} 50% { box-shadow: 0 0 10px 2px rgba(239,68,68,.35);} }
+  .badge.replay { background: #262626; color: #a3a3a3; }
+  .ptext { margin: 12px 0 0; font-size: 15px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: #e5e5e4; }
+  .updates { margin-top: 12px; border-radius: 12px; padding: 12px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); }
+  .updates.livebox { border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.04); }
+  .updates h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #a3a3a3; display: flex; justify-content: space-between; }
+  .updates.livebox h4 { color: #f87171; text-transform: none; letter-spacing: 0; }
+  .updates ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .updates li { font-size: 13px; color: #d4d4d4; display: flex; gap: 8px; }
+  .updates li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: rgba(248,113,113,.8); margin-top: 7px; flex-shrink: 0; }
+  .updates li time { color: #525252; font-size: 11px; white-space: nowrap; margin-left: 6px; }
+  .pfoot { margin-top: 12px; display: flex; gap: 20px; font-size: 14px; color: #737373; align-items: center; }
+  .act { border: 0; background: none; color: #737373; font-size: 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; padding: 2px 4px; border-radius: 6px; }
+  button.act:hover { color: #f472b6; background: rgba(244,114,182,.08); }
+  .watching { margin-left: auto; color: #f87171; }
+
+  .chip { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 3px;
+    border-radius: 6px; font-size: 9px; font-weight: 700; cursor: default; user-select: none; }
+  .chip.ig { background: linear-gradient(to top right, #F58529, #DD2A7B, #8134AF); color: #fff; }
+  .chip.x { background: #fff; color: #000; }
+  .chip.fb { background: #1877F2; color: #fff; }
+  .chip.tt { background: #000; color: #fff; box-shadow: inset 0 0 0 1px rgba(52,211,153,.6); }
+  .chip.li { background: #0A66C2; color: #fff; }
+  .chip.queued { background: #262626; color: #737373; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+  .chip.publishing { background: rgba(245,158,11,.18); color: #fcd34d; box-shadow: inset 0 0 0 1px rgba(252,211,77,.4); animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .45; } }
+  .chip.failed { background: rgba(239,68,68,.15); color: #fca5a5; box-shadow: inset 0 0 0 1px rgba(239,68,68,.5); }
+  .chip.published { position: relative; }
+  .chip.published::after { content: "✓"; font-size: 8px; margin-left: 2px; }
+  .chip.failed::after { content: "!"; font-size: 8px; margin-left: 2px; }
+  .chip.link { cursor: pointer; text-decoration: none; }
+  .chips { display: inline-flex; gap: 4px; align-items: center; }
+
+  textarea { width: 100%; resize: none; background: transparent; border: 0; outline: none; color: #e5e5e4;
+    font-size: 15px; font-family: inherit; min-height: 72px; }
+  textarea::placeholder { color: #525252; }
+  .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .pick { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04); color: #a3a3a3; font-size: 12px; font-weight: 500; padding: 4px 10px; cursor: pointer; transition: all .15s; }
+  .pick.on { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.3); }
+  .pick.off { opacity: .35; cursor: not-allowed; }
+  .row { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.05); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .livetoggle { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04); color: #a3a3a3; font-size: 12px; font-weight: 600; padding: 6px 12px; cursor: pointer; }
+  .livetoggle .d { width: 8px; height: 8px; border-radius: 50%; background: #525252; }
+  .livetoggle.on { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.15); color: #f87171; }
+  .livetoggle.on .d { background: #ef4444; animation: blink 1.2s infinite; }
+  .counter { font-size: 12px; color: #525252; font-variant-numeric: tabular-nums; }
+  .postbtn { border: 0; border-radius: 999px; background: #a3e635; color: #0a0a0a; font-weight: 700; font-size: 14px;
+    padding: 8px 20px; cursor: pointer; transition: background .15s; }
+  .postbtn:hover { background: #bef264; }
+  .postbtn.livemode { background: #ef4444; color: #fff; }
+  .postbtn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .lcard { overflow: hidden; }
+  .lcard.live { box-shadow: 0 0 0 1px rgba(239,68,68,.3), 0 8px 24px rgba(0,0,0,.25); }
+  .lhead { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.03); }
+  .ltimer { font-size: 12px; font-weight: 600; color: #f87171; font-variant-numeric: tabular-nums; }
+  .lviewers { font-size: 12px; color: #a3a3a3; }
+  .lbody { padding: 16px; }
+  .feedlist { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+  .up { display: flex; gap: 10px; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.02); color: #a3a3a3; }
+  .up.newest { border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.06); color: #e5e5e4; }
+  .up time { color: #525252; font-size: 11px; white-space: nowrap; margin-left: auto; }
+  .uprow { display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.05); }
+  .uprow input { flex: 1; min-width: 0; border-radius: 999px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04);
+    padding: 8px 14px; color: #e5e5e4; font-size: 14px; font-family: inherit; outline: none; }
+  .uprow input:focus { border-color: rgba(255,255,255,.3); }
+  .btn { border: 0; border-radius: 999px; font-weight: 600; font-size: 13px; padding: 8px 14px; cursor: pointer; }
+  .btn.white { background: #fff; color: #0a0a0a; }
+  .btn.redline { border: 1px solid rgba(239,68,68,.4); background: transparent; color: #f87171; }
+  .btn.redline:hover { background: rgba(239,68,68,.1); }
+  .btn.redline.confirm { background: #ef4444; color: #fff; }
+  .empty { text-align: center; padding: 40px 20px; }
+  .empty .big { font-size: 32px; }
+  .empty p { color: #a3a3a3; font-size: 14px; margin: 8px 0 0; }
+  .empty small { color: #525252; font-size: 12px; }
+  h2.sec { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #737373; margin: 20px 0 12px; }
+
+  .statbar { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-bottom: 16px; }
+  .statbar div { padding: 12px; }
+  .statbar .v { font-size: 18px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .statbar .l { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #737373; font-weight: 600; margin-top: 2px; }
+  .plgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .plcard { display: flex; align-items: center; gap: 12px; }
+  .plmark { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
+  .plmeta { flex: 1; min-width: 0; }
+  .plname { font-size: 14px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 9px; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
+  .pill.on { background: rgba(52,211,153,.15); color: #34d399; }
+  .pill.off { background: rgba(255,255,255,.05); color: #737373; }
+  .plstats { font-size: 12px; color: #a3a3a3; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .plstats b { color: #e5e5e4; }
+  .btn.connect { background: #a3e635; color: #0a0a0a; flex-shrink: 0; }
+  .btn.disconnect { background: transparent; border: 1px solid rgba(255,255,255,.15); color: #a3a3a3; }
+  .btn.disconnect:hover { border-color: rgba(239,68,68,.5); color: #f87171; }
+
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  #modal .inner { max-width: 420px; width: 100%; background: #171717; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 16px; }
+  #cardcanvas { width: 100%; border-radius: 10px; display: block; }
+  #modal .mrow { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+  #modal p { margin: 0 0 12px; font-size: 13px; color: #a3a3a3; }
+  [hidden] { display: none !important; }
+  footer { text-align: center; color: #404040; font-size: 11px; padding: 10px 0 30px; }
+  @media (max-width: 640px) { .plgrid { grid-template-columns: 1fr; } nav button small { display: none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" data-act="tab" data-tab="feed">
+    <span class="bean">🫘</span>
+    <span>Garbanzo <small>post once · go live everywhere</small></span>
+  </div>
+  <nav>
+    <button data-act="tab" data-tab="feed">Feed</button>
+    <button data-act="tab" data-tab="live">Live<span class="livecount" id="livecount" hidden></span></button>
+    <button data-act="tab" data-tab="platforms">Platforms</button>
+  </nav>
+  <div class="status"><span class="dot"></span>LOCAL LIVE</div>
+  <button class="reset" data-act="reset" title="Reset demo data">Reset</button>
+</header>
+
+<main id="view"></main>
+<footer>
+  Garbanzo single-file demo · everything runs in this tab (no server, no dependencies) ·
+  platform delivery is simulated · the full app streams updates between browsers and calls the real APIs
+</footer>
+
+<div id="modal" hidden>
+  <div class="inner">
+    <p><b style="color:#fff">Instagram card</b> — the exact image your post would upload. Download it to share.</p>
+    <canvas id="cardcanvas" width="1080" height="1350"></canvas>
+    <div class="mrow">
+      <a id="carddownload" class="btn white" download="garbanzo-card.png">Download PNG</a>
+      <button class="btn disconnect" data-act="closemodal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ──────────────────────────────────────────────────────────────────────────
+   Garbanzo — single-file demo
+   Feed + live posts + multi-platform composer + bot→platforms delivery
+   (simulated) + canvas-rendered Instagram cards. State persists in
+   localStorage. No dependencies, works from file://.
+────────────────────────────────────────────────────────────────────────── */
+const LS_KEY = "garbanzo.singlefile.v1";
+const MAX_TEXT = 1000;
+
+const PLATFORMS = {
+  twitter:   { name: "X / Twitter", mark: "𝕏",  cls: "x",  supported: true },
+  facebook:  { name: "Facebook",    mark: "f",  cls: "fb", supported: false },
+  instagram: { name: "Instagram",   mark: "◎",  cls: "ig", supported: true },
+  tiktok:    { name: "TikTok",      mark: "♪",  cls: "tt", supported: false },
+  linkedin:  { name: "LinkedIn",    mark: "in", cls: "li", supported: true },
+};
+const IDS = Object.keys(PLATFORMS);
+
+const BOTS = [
+  { author: "Sara K.",  handle: "@sarak",  avatar: "🦊", color: "bg1" },
+  { author: "Omar T.",  handle: "@omart",  avatar: "🐙", color: "bg2" },
+  { author: "Lena M.",  handle: "@lenam",  avatar: "🦋", color: "bg3" },
+  { author: "Faisal A.",handle: "@faisla", avatar: "🐺", color: "bg4" },
+  { author: "Nadia R.", handle: "@nadiar", avatar: "🐝", color: "bg5" },
+  { author: "Diego P.", handle: "@diegop", avatar: "🐢", color: "bg6" },
+];
+const POSTS = [
+  "Shipped the fix before lunch. Best feeling in the world 🚀",
+  "Hot take: most meetings should be a written document instead.",
+  "Testing the new live composer from my phone — this is wild.",
+  "Reminder: water the plants, stretch your back, and close that 3rd coffee tab.",
+  "We crossed 10k community members this week. Thank you all 🙏",
+  "New feature Friday! You'll know it when you see it 👀",
+  "The office dog has unionized the snack cupboard. Morale is at record highs.",
+  "Working from the beach today. Signal is spotty, ideas are not.",
+];
+const LIVE_EVENTS = [
+  "LIVE: City marathon finish line — following the last 20 runners 🏃",
+  "LIVE: Studio open day — behind the scenes all afternoon",
+  "LIVE: Growth marketing Q&A — drop your questions in the updates",
+  "LIVE: Hackathon kickoff — 48 hours, one board, zero sleep",
+];
+const LIVE_UPDATES = [
+  "Crowd is buzzing — 500+ strong in the room 🎉",
+  "Demo running now — watch the live feed update in real time.",
+  "Milestone just hit: 50k impressions across all connected platforms.",
+  "Taking questions now — the best one wins a merch pack 📦",
+  "Break time: the team is having cake. It's a professional decision.",
+  "Next up: the surprise announcement everyone's been guessing all week.",
+];
+
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function timeAgo(ts, now = Date.now()) {
+  const s = Math.max(0, Math.floor((now - ts) / 1000));
+  if (s < 5) return "just now";
+  if (s < 60) return s + "s ago";
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + "m ago";
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + "h ago";
+  return Math.floor(h / 24) + "d ago";
+}
+function elapsed(ts, now = Date.now()) {
+  if (!ts) return "0:00";
+  const s = Math.max(0, Math.floor((now - ts) / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h ? h + ":" + String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0")
+           : m + ":" + String(sec).padStart(2,"0");
+}
+const compact = n => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n);
+
+/* ── state ──────────────────────────────────────────────────────────────── */
+function seed() {
+  const now = Date.now(), min = 60000;
+  const mk = p => ({ id: uid(), likes: 0, comments: 0, reposts: 0, isLive: false,
+    delivery: {}, liveStartedAt: null, liveEndedAt: null, viewers: 0, peakViewers: 0,
+    updates: [], ...p });
+  const live = mk({
+    author: "Garbanzo Team", handle: "@garbanzo", avatar: "🫘", color: "bg7",
+    text: "🔴 We are LIVE — the Garbanzo 2.0 launch event! Updates, demos and surprises rolling in as they happen.",
+    platforms: ["twitter", "instagram", "linkedin"], at: now - 26 * min,
+    likes: 128, comments: 42, reposts: 31, isLive: true,
+    liveStartedAt: now - 26 * min, viewers: 84, peakViewers: 96,
+    updates: [
+      { id: uid(), text: "Doors open — 200+ people in the room and 3x more watching online 🎉", at: now - 20 * min },
+      { id: uid(), text: "Demo #1: the new multi-platform composer. One post, five networks.", at: now - 12 * min },
+      { id: uid(), text: "Announcement: live viewer counts ship to all plans this month.", at: now - 4 * min },
+    ],
+  });
+  const posts = [
+    live,
+    mk({ author: "Sara K.", handle: "@sarak", avatar: "🦊", color: "bg1",
+      text: "Just wrapped the Q3 design review — the new onboarding flow is 40% faster. Team did incredible work 🎉",
+      platforms: ["twitter", "linkedin"], at: now - 14 * min, likes: 64, comments: 9, reposts: 12 }),
+    mk({ author: "Omar T.", handle: "@omart", avatar: "🐙", color: "bg2",
+      text: "PSA: you don't need 12 browser tabs to plan a launch. You need one good checklist.",
+      platforms: ["facebook", "twitter"], at: now - 47 * min, likes: 210, comments: 33, reposts: 45 }),
+    mk({ author: "Lena M.", handle: "@lenam", avatar: "🦋", color: "bg3",
+      text: "Golden hour from the rooftop studio ☀️ New lookbook drops Friday — you'll love it.",
+      platforms: ["instagram", "tiktok"], at: now - 63 * min, likes: 342, comments: 27, reposts: 18 }),
+    mk({ author: "Nadia R.", handle: "@nadiar", avatar: "🐝", color: "bg5",
+      text: "The best growth hack? Answering your own support tickets for one week straight. I was wrong about so many things.",
+      platforms: ["twitter", "facebook", "linkedin"], at: now - 120 * min, likes: 512, comments: 61, reposts: 97 }),
+  ];
+  for (const p of posts) for (const pl of p.platforms)
+    p.delivery[pl] = { status: "published", at: p.at, simulated: true, externalId: "seed" };
+  const platforms = {};
+  for (const id of IDS)
+    platforms[id] = { id, connected: id !== "tiktok", followers: 10000 + Math.floor(Math.random() * 30000),
+      reach: 0, posts: 0 };
+  platforms.tiktok.followers = 0;
+  for (const k of Object.keys(platforms)) platforms[k].reach = platforms[k].followers * (4 + Math.floor(Math.random() * 8));
+  for (const p of posts) for (const pl of p.platforms) platforms[pl].posts++;
+  return { posts, platforms, tab: "feed" };
+}
+let state;
+try {
+  state = JSON.parse(localStorage.getItem(LS_KEY)) || seed();
+} catch { state = seed(); }
+// live posts older than 2h on reload become replays
+for (const p of state.posts)
+  if (p.isLive && Date.now() - (p.liveStartedAt || 0) > 2 * 3600e3)
+    { p.isLive = false; p.liveEndedAt = Date.now(); p.viewers = 0; }
+const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} };
+
+/* ── bot → platforms delivery pipeline (simulated) ──────────────────────── */
+function runDelivery(post) {
+  let delay = 400;
+  for (const pl of post.platforms) {
+    setTimeout(() => {
+      post.delivery[pl] = { status: "publishing" };
+      save(); render();
+      setTimeout(() => {
+        const ok = PLATFORMS[pl].supported;
+        post.delivery[pl] = ok
+          ? { status: "published", at: Date.now(), simulated: true,
+              externalId: pl === "instagram" ? "card" : "demo-" + uid().slice(0, 6) }
+          : { status: "failed", at: Date.now(),
+              error: "Adapter in development — route via Buffer (PUBLISH_VIA_*=buffer)" };
+        save(); render();
+      }, 900 + Math.random() * 1100);
+    }, delay);
+    delay += 400;
+  }
+}
+
+/* ── actions ───────────────────────────────────────────────────────────── */
+function addPost(author, handle, avatar, color, text, platforms, isLive) {
+  const now = Date.now();
+  const post = { id: uid(), author, handle, avatar, color, text, platforms, at: now,
+    likes: 0, comments: 0, reposts: 0, isLive: !!isLive,
+    delivery: {}, liveStartedAt: isLive ? now : null, liveEndedAt: null,
+    viewers: isLive ? 1 : 0, peakViewers: isLive ? 1 : 0,
+    updates: isLive ? [{ id: uid(), text, at: now }] : [] };
+  state.posts.unshift(post);
+  save(); render();
+  runDelivery(post);
+  return post;
+}
+const likePost = id => { const p = state.posts.find(x => x.id === id); if (p) { p.likes++; save(); render(); } };
+function addUpdate(id, text) {
+  const p = state.posts.find(x => x.id === id);
+  if (!p || !p.isLive || !text.trim()) return false;
+  p.updates.push({ id: uid(), text: text.trim(), at: Date.now() });
+  p.viewers = Math.max(1, p.viewers + Math.floor(Math.random() * 4));
+  p.peakViewers = Math.max(p.peakViewers, p.viewers);
+  save(); render();
+  return true;
+}
+function endLive(id) {
+  const p = state.posts.find(x => x.id === id);
+  if (!p || !p.isLive) return;
+  p.isLive = false; p.liveEndedAt = Date.now(); p.viewers = 0;
+  save(); render();
+}
+function toggleConnect(id) {
+  const pl = state.platforms[id];
+  pl.connected = !pl.connected;
+  if (pl.connected && !pl.followers) pl.followers = 1000 + Math.floor(Math.random() * 20000);
+  save(); render();
+}
+
+/* ── simulator (keeps the room alive) ───────────────────────────────────── */
+function botTick() {
+  const live = state.posts.filter(p => p.isLive);
+  const r = Math.random();
+  if (r < 0.24) {
+    const b = pick(BOTS);
+    const plats = [...new Set(Array.from({ length: 1 + Math.floor(Math.random() * 3) }, () => pick(IDS)))];
+    addPost(b.author, b.handle, b.avatar, b.color, pick(POSTS), plats, false);
+  } else if (r < 0.46) {
+    const p = pick(state.posts.slice(0, 12));
+    if (p) { p.likes += 1 + Math.floor(Math.random() * 3); if (Math.random() < .3) p.comments++; save(); render(); }
+  } else if (r < 0.66 && live.length) {
+    const p = pick(live);
+    p.viewers = Math.max(0, p.viewers + Math.floor(Math.random() * 11) - 3);
+    p.peakViewers = Math.max(p.peakViewers, p.viewers);
+    save();
+  } else if (r < 0.8 && live.length) {
+    const p = pick(live);
+    addUpdate(p.id, pick(LIVE_UPDATES));
+  } else if (r < 0.88 && live.length < 3) {
+    const b = pick(BOTS);
+    addPost(b.author, b.handle, b.avatar, b.color, pick(LIVE_EVENTS),
+      [...new Set(Array.from({ length: 2 }, () => pick(IDS)))], true);
+  } else if (live.length > 1) {
+    const oldest = [...live].sort((a, b) => a.liveStartedAt - b.liveStartedAt)[0];
+    if (Date.now() - oldest.liveStartedAt > 120e3) endLive(oldest.id);
+  }
+  // platform stat drift
+  for (const id of IDS) { const pl = state.platforms[id];
+    if (pl.connected) { pl.followers += Math.floor(Math.random() * 6); pl.reach += Math.floor(Math.random() * 200); } }
+  save();
+}
+
+/* ── rendering ──────────────────────────────────────────────────────────── */
+let tab = state.tab || "feed";
+const view = document.getElementById("view");
+
+const AV = {
+  bg1: "linear-gradient(135deg,#f97316,#ea580c)", bg2: "linear-gradient(135deg,#6366f1,#4f46e5)",
+  bg3: "linear-gradient(135deg,#ec4899,#db2777)", bg4: "linear-gradient(135deg,#0ea5e9,#0284c7)",
+  bg5: "linear-gradient(135deg,#f59e0b,#d97706)", bg6: "linear-gradient(135deg,#10b981,#059669)",
+  bg7: "linear-gradient(135deg,#a3e635,#65a30d)", me: "linear-gradient(135deg,#8b5cf6,#7c3aed)",
+};
+function avatarStyle(p) { return "background:" + (AV[p.color] || AV.me) + ";"; }
+
+function chipHTML(p, pl) {
+  const d = p.delivery[pl];
+  const meta = PLATFORMS[pl];
+  const status = d ? d.status : "queued";
+  let title, cls = meta.cls;
+  if (status === "publishing") { title = "Publishing to " + meta.name + "…"; cls = "publishing"; }
+  else if (status === "published") {
+    title = d.simulated ? meta.name + " · published (demo mode)" : meta.name + " · published · " + (d.externalId || "");
+    if (pl === "instagram") title += " — click to see the rendered card";
+  }
+  else if (status === "failed") { title = meta.name + " · " + (d.error || "failed"); cls = "failed"; }
+  else title = meta.name + " · queued";
+  const linkable = status === "published" && pl === "instagram";
+  return '<span class="chip ' + cls + ' ' + (linkable ? "link" : "") + '"' +
+    (linkable ? ' data-act="card" data-id="' + p.id + '" style="background:' + (AV["bg7"]) + '" ' : "") +
+    ' title="' + esc(title) + '">' + meta.mark + "</span>";
+}
+function chipsHTML(p) { return '<span class="chips">' + p.platforms.map(pl => chipHTML(p, pl)).join("") + "</span>"; }
+
+function updatesPanel(p, now) {
+  if (!p.updates.length) return "";
+  const latest = p.updates.slice(-3);
+  return '<div class="updates ' + (p.isLive ? "livebox" : "") + '">' +
+    "<h4>" + (p.isLive
+      ? "● " + p.updates.length + " live update" + (p.updates.length === 1 ? "" : "s")
+      : "Live ended · " + p.updates.length + " updates · peak " + compact(p.peakViewers) + " viewers") +
+    ' <span style="color:#525252;font-weight:400">watch on Live →</span></h4><ul>' +
+    latest.map(u => "<li>" + esc(u.text) + "<time>" + timeAgo(u.at, now) + "</time></li>").join("") +
+    "</ul></div>";
+}
+
+function postCard(p, now) {
+  return '<article class="card">' +
+    '<div class="phead"><span class="avatar" style="' + avatarStyle(p) + '">' + p.avatar + "</span>" +
+    '<div class="pmeta"><div class="pname">' + esc(p.author) + ' <span class="phandle">' + esc(p.handle) + "</span></div>" +
+    '<div class="ptime">' + timeAgo(p.at, now) +
+    (p.isLive ? ' · <span class="livefor">live for ' + elapsed(p.liveStartedAt, now) + "</span>" : "") + "</div></div>" +
+    '<div class="pbadges">' +
+    (p.isLive ? '<span class="badge live">● LIVE</span>' : p.liveEndedAt ? '<span class="badge replay">■ REPLAY</span>' : "") +
+    chipsHTML(p) + "</div></div>" +
+    '<p class="ptext">' + esc(p.text) + "</p>" +
+    updatesPanel(p, now) +
+    '<div class="pfoot">' +
+    '<button class="act" data-act="like" data-id="' + p.id + '">♥ <span>' + compact(p.likes) + "</span></button>" +
+    '<span class="act">💬 ' + compact(p.comments) + "</span>" +
+    '<span class="act">🔁 ' + compact(p.reposts) + "</span>" +
+    (p.isLive ? '<span class="watching">👁 ' + compact(p.viewers) + " watching</span>" : "") +
+    "</div></article>";
+}
+
+let picked = new Set(IDS.filter(id => state.platforms[id].connected));
+let goLive = false;
+
+function feedHTML(now) {
+  const remaining = MAX_TEXT;
+  return '<div class="feed">' +
+    '<div class="card">' +
+      '<div style="display:flex;gap:12px"><span class="avatar" style="background:' + AV.me + '">🙂</span>' +
+      '<div style="flex:1;min-width:0"><textarea id="compose" maxlength="' + MAX_TEXT +
+      '" placeholder="' + (goLive ? "What's happening live? Start your live post — keep adding updates…" : "What's happening? Post to every platform at once…") + '"></textarea></div></div>' +
+      '<div class="picker">' + IDS.map(id =>
+        '<button class="pick ' + (picked.has(id) ? "on" : "off") + '" data-act="pick" data-id="' + id + '" ' +
+        'title="' + (state.platforms[id].connected ? "Toggle " + PLATFORMS[id].name : PLATFORMS[id].name + " — connect it on the Platforms tab") + '">' +
+        '<span class="chip ' + PLATFORMS[id].cls + '">' + PLATFORMS[id].mark + "</span>" + PLATFORMS[id].name + "</button>").join("") + "</div>" +
+      '<div class="row">' +
+      '<button class="livetoggle ' + (goLive ? "on" : "") + '" data-act="golivetoggle"><span class="d"></span>' +
+      (goLive ? "Going live" : "Go live") + "</button>" +
+      '<span class="counter" id="counter"></span>' +
+      '<button class="postbtn ' + (goLive ? "livemode" : "") + '" data-act="post">' +
+      (goLive ? "Go Live" : "Post to " + picked.size + " platform" + (picked.size === 1 ? "" : "s")) + "</button>" +
+      "</div></div>" +
+    state.posts.map(p => postCard(p, now)).join("") +
+    "</div>";
+}
+
+function liveCardHTML(p, now) {
+  const ups = [...p.updates].sort((a, b) => b.at - a.at).slice(0, 30);
+  return '<div class="card lcard ' + (p.isLive ? "live" : "") + '">' +
+    '<div class="lhead"><span class="avatar" style="' + avatarStyle(p) + '">' + p.avatar + "</span>" +
+    '<div class="pmeta"><div class="pname">' + esc(p.author) + ' <span class="phandle">' + esc(p.handle) + "</span></div>" +
+    (p.isLive
+      ? '<div class="ltimer">LIVE · ' + elapsed(p.liveStartedAt, now) + ' <span class="lviewers">· 👁 ' + compact(p.viewers) + " watching</span></div>"
+      : '<div class="ltimer" style="color:#737373">Ended ' + timeAgo(p.liveEndedAt, now) + " · peak " + compact(p.peakViewers) + " viewers</div>") +
+    "</div><div class=\"pbadges\">" + (p.isLive ? '<span class="badge live">● LIVE</span>' : '<span class="badge replay">■ REPLAY</span>') + chipsHTML(p) + "</div></div>" +
+    '<div class="lbody"><p class="ptext" style="margin-top:0">' + esc(p.text) + "</p>" +
+    '<div class="feedlist">' + (ups.length
+      ? ups.map((u, i) => '<div class="up ' + (i === 0 && p.isLive ? "newest" : "") + '">' + esc(u.text) + "<time>" + timeAgo(u.at, now) + "</time></div>").join("")
+      : '<div class="up">No updates yet.</div>') + "</div>" +
+    (p.isLive
+      ? '<div class="uprow"><input data-input-for="' + p.id + '" maxlength="500" placeholder="Add a live update…">' +
+        '<button class="btn white" data-act="update" data-id="' + p.id + '">Update</button>' +
+        '<button class="btn redline" data-act="end" data-id="' + p.id + '" data-confirm="1">End live</button></div>'
+      : "") +
+    "</div></div>";
+}
+
+function liveHTML(now) {
+  const live = state.posts.filter(p => p.isLive).sort((a, b) => b.liveStartedAt - a.liveStartedAt);
+  const ended = state.posts.filter(p => !p.isLive && p.liveEndedAt).sort((a, b) => (b.liveEndedAt || 0) - (a.liveEndedAt || 0)).slice(0, 3);
+  let h = live.length
+    ? live.map(p => liveCardHTML(p, now)).join("")
+    : '<div class="card empty"><div class="big">🎬</div><p>Nothing live at the moment</p><small>New live posts appear here the instant anyone goes live.</small></div>';
+  if (ended.length) h += '<h2 class="sec">Recently ended</h2>' + ended.map(p => liveCardHTML(p, now)).join("");
+  return h;
+}
+
+function platformsHTML() {
+  const conn = IDS.map(id => state.platforms[id]).filter(p => p.connected);
+  const reach = conn.reduce((s, p) => s + p.reach, 0);
+  const postsN = conn.reduce((s, p) => s + p.posts, 0);
+  const MARKS = { twitter: "background:#fff;color:#000", facebook: "background:#1877F2;color:#fff",
+    instagram: "background:linear-gradient(to top right,#F58529,#DD2A7B,#8134AF);color:#fff",
+    tiktok: "background:#000;color:#fff;box-shadow:inset 0 0 0 1px rgba(52,211,153,.6)", linkedin: "background:#0A66C2;color:#fff" };
+  return '<div class="card statbar">' +
+    '<div><div class="v">' + conn.length + " / " + IDS.length + '</div><div class="l">Connected</div></div>' +
+    '<div><div class="v">' + compact(reach) + '</div><div class="l">Total reach</div></div>' +
+    '<div><div class="v">' + compact(postsN) + '</div><div class="l">Posts published</div></div></div>' +
+    '<div class="plgrid">' + IDS.map(id => {
+      const p = state.platforms[id], m = PLATFORMS[id];
+      return '<div class="card plcard"><span class="plmark" style="' + MARKS[id] + '">' + m.mark + "</span>" +
+        '<div class="plmeta"><div class="plname">' + m.name +
+        ' <span class="pill ' + (p.connected ? "on" : "off") + '">' + (p.connected ? "CONNECTED" : "OFFLINE") + "</span></div>" +
+        (p.connected ? '<div class="plstats"><b>' + compact(p.followers) + "</b> followers · <b>" + compact(p.reach) + "</b> reach · <b>" + compact(p.posts) + "</b> posts</div>" : "") +
+        "</div>" +
+        '<button class="btn ' + (p.connected ? "disconnect" : "connect") + '" data-act="connect" data-id="' + id + '">' +
+        (p.connected ? "Disconnect" : "Connect") + "</button></div>";
+    }).join("") + "</div>" +
+    '<p style="color:#525252;font-size:12px;margin-top:14px">Demo: connections & numbers are simulated. In the full app, X / Instagram / LinkedIn call their real APIs, and any platform can be routed through <b style="color:#a3a3a3">Buffer</b> (one key, many networks) as the second option.</p>';
+}
+
+function render() {
+  const now = Date.now();
+  const liveCount = state.posts.filter(p => p.isLive).length;
+  const lc = document.getElementById("livecount");
+  lc.hidden = liveCount === 0; lc.textContent = liveCount;
+  document.querySelectorAll("nav button[data-tab]").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === tab));
+  view.innerHTML = tab === "feed" ? feedHTML(now) : tab === "live" ? liveHTML(now) : platformsHTML();
+  const ta = document.getElementById("compose");
+  if (ta) ta.addEventListener("input", () => {
+    const c = document.getElementById("counter");
+    if (c) c.textContent = ta.value.length ? (MAX_TEXT - ta.value.length) + "" : "";
+  });
+}
+
+/* ── Instagram card (canvas, same layout as the app's sharp render) ─────── */
+function wrap(text, maxChars, maxLines) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = []; let cur = "";
+  for (const w of words) {
+    if (cur && cur.length + 1 + w.length > maxChars) {
+      lines.push(cur); cur = w;
+      if (lines.length === maxLines - 1) { cur = cur.slice(0, maxChars); break; }
+    } else cur = cur ? cur + " " + w : w;
+  }
+  if (cur) lines.push(cur);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].slice(0, maxChars - 1) + "…"; }
+  return lines;
+}
+function drawCard(post) {
+  const cv = document.getElementById("cardcanvas"), x = cv.getContext("2d");
+  x.clearRect(0, 0, 1080, 1350);
+  x.fillStyle = "#0b0b0c"; x.fillRect(0, 0, 1080, 1350);
+  const g = x.createRadialGradient(540, 0, 50, 540, 0, 1100);
+  g.addColorStop(0, "rgba(163,230,53,.22)"); g.addColorStop(.55, "rgba(163,230,53,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
+  x.fillStyle = "#a3e635"; x.fillRect(0, 0, 1080, 14);
+  // logo block
+  x.fillStyle = "#a3e635";
+  const r = 28, bx = 90, by = 130, bs = 110;
+  x.beginPath(); x.moveTo(bx + r, by); x.arcTo(bx + bs, by, bx + bs, by + bs, r);
+  x.arcTo(bx + bs, by + bs, bx, by + bs, r); x.arcTo(bx, by + bs, bx, by, r);
+  x.arcTo(bx, by, bx + bs, by, r); x.fill();
+  x.fillStyle = "#0b0b0c"; x.font = "bold 76px system-ui, sans-serif"; x.textAlign = "center";
+  x.fillText("G", bx + bs / 2, by + 82);
+  x.textAlign = "left"; x.fillStyle = "#f5f5f4"; x.font = "bold 52px system-ui, sans-serif";
+  x.fillText("GARBANZO", 230, 196);
+  x.fillStyle = "#737373"; x.font = "26px system-ui, sans-serif";
+  x.fillText("P O S T   O N C E  ·  G O   L I V E   E V E R Y W H E R E", 232, 232);
+  // text
+  const lines = wrap(post.text, 30, 9);
+  x.fillStyle = "#e5e5e4"; x.font = "56px system-ui, sans-serif";
+  const y0 = 560 - Math.floor((lines.length - 1) * 38);
+  lines.forEach((ln, i) => x.fillText(ln, 90, y0 + i * 76));
+  // footer
+  x.strokeStyle = "#262626"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(90, 1150); x.lineTo(990, 1150); x.stroke();
+  x.fillStyle = "#a3e635"; x.font = "bold 34px system-ui, sans-serif"; x.fillText(post.handle, 90, 1225);
+  x.fillStyle = "#737373"; x.font = "28px system-ui, sans-serif";
+  x.fillText(post.author + " · via Garbanzo", 90, 1272);
+  x.fillStyle = "#525252"; x.textAlign = "right"; x.fillText("garbanzo.social", 990, 1272); x.textAlign = "left";
+}
+function openCard(postId) {
+  const p = state.posts.find(x => x.id === postId);
+  if (!p) return;
+  drawCard(p);
+  document.getElementById("carddownload").href = document.getElementById("cardcanvas").toDataURL("image/png");
+  document.getElementById("modal").hidden = false;
+}
+
+/* ── events ─────────────────────────────────────────────────────────────── */
+let confirmUntil = 0;
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  if (act === "tab") { tab = el.dataset.tab; state.tab = tab; save(); render(); }
+  else if (act === "like") likePost(id);
+  else if (act === "card") openCard(id);
+  else if (act === "closemodal") document.getElementById("modal").hidden = true;
+  else if (act === "pick" && state.platforms[id].connected) {
+    picked.has(id) ? picked.delete(id) : picked.add(id); render();
+  }
+  else if (act === "golivetoggle") { goLive = !goLive; render(); }
+  else if (act === "post") {
+    const ta = document.getElementById("compose");
+    const text = (ta.value || "").trim();
+    if (!text || picked.size === 0) return;
+    addPost("You", "@you", "🙂", "me", text, [...picked], goLive);
+    goLive = false;
+    const t2 = document.getElementById("compose"); if (t2) t2.value = "";
+    render();
+  }
+  else if (act === "update") {
+    const inp = document.querySelector('[data-input-for="' + id + '"]');
+    if (inp && addUpdate(id, inp.value)) inp.value = "";
+  }
+  else if (act === "end") {
+    if (Date.now() < confirmUntil && el.dataset.confirmId === id) { endLive(id); confirmUntil = 0; }
+    else { el.dataset.confirmId = id; el.classList.add("confirm"); el.textContent = "Confirm end?";
+      confirmUntil = Date.now() + 3000;
+      setTimeout(() => { el.classList.remove("confirm"); el.textContent = "End live"; }, 3000); }
+  }
+  else if (act === "connect") toggleConnect(id);
+  else if (act === "reset") {
+    localStorage.removeItem(LS_KEY); state = seed(); save(); render();
+  }
+});
+document.getElementById("modal").addEventListener("click", e => {
+  if (e.target.id === "modal") e.currentTarget.hidden = true;
+});
+
+/* ── ticks ──────────────────────────────────────────────────────────────── */
+render();
+setInterval(() => {
+  // viewer drift on live posts
+  const live = state.posts.filter(p => p.isLive);
+  if (live.length) { for (const p of live) { p.viewers = Math.max(0, p.viewers + Math.floor(Math.random() * 5) - 2); p.peakViewers = Math.max(p.peakViewers, p.viewers); } save(); }
+  render();
+}, 1000);
+setInterval(botTick, 8000);
+setTimeout(botTick, 2500);
+</script>
+</body>
+</html>
