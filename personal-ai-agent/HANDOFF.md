@@ -59,10 +59,10 @@ already exist and are verified. Do not refactor, rename, or "improve" anything
 beyond exactly what is listed.
 
 STEP 1. Create connectors/sheets_write_guard.py with the exact contents of:
-https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/1f45dcd60f673e42aaf185117063c0bb60dbce6b/personal-ai-agent/connectors/sheets_write_guard.py
+https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/connectors/sheets_write_guard.py
 
 STEP 2. Create connectors/state_evidence.py with the exact contents of:
-https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/1f45dcd60f673e42aaf185117063c0bb60dbce6b/personal-ai-agent/connectors/state_evidence.py
+https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/connectors/state_evidence.py
 
 Copy both byte for byte. Do not reformat, do not reorder imports, do not change
 default values, do not translate the Arabic tab names.

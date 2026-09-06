@@ -25,8 +25,8 @@ last deploy before today → **Redeploy**. That is your undo. It takes ~60 secon
 
 Open these two in a browser tab. Click **Raw**, then Ctrl+A / Ctrl+C.
 
-- Guard: https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/1f45dcd60f673e42aaf185117063c0bb60dbce6b/personal-ai-agent/connectors/sheets_write_guard.py
-- Evidence: https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/1f45dcd60f673e42aaf185117063c0bb60dbce6b/personal-ai-agent/connectors/state_evidence.py
+- Guard: https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/connectors/sheets_write_guard.py
+- Evidence: https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/connectors/state_evidence.py
 
 ---
 
@@ -256,9 +256,9 @@ the retry rules, the timeout paths, the key-column mapping, and the durability
 logic.
 
 1. **Add file** → **Create new file** → `tests/test_sheets_write_guard.py` → paste
-   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/HEAD/personal-ai-agent/tests/test_sheets_write_guard.py
+   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/tests/test_sheets_write_guard.py
 2. **Add file** → **Create new file** → `tests/test_state_evidence.py` → paste
-   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/HEAD/personal-ai-agent/tests/test_state_evidence.py
+   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/49cb795ef0fff097c3ed79ed39c322639cbfcf77/personal-ai-agent/tests/test_state_evidence.py
 
 Then wire them into CI, or they will never run. Edit
 `.github/workflows/production-model-router.yml`, find the `python -m unittest`
