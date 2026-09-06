@@ -1,0 +1,10 @@
+{
+  "_note": "TEMPLATE ONLY — files starting with 'example' are never published. Copy this to a new file (e.g. posts/2026-09-07-teach-ar.json) with your real values.",
+  "text": "زلة واحدة… قد تنهي ورديتك.\n\nمع موسم الأمطار، التأهيل وقاية: جسد أقوى يعني إصابات أقل. 💪\n\n#سلامة_العمل #الجبيل #التأهيل",
+  "channelId": "YOUR_BUFFER_CHANNEL_ID",
+  "mode": "customScheduled",
+  "dueAt": "2026-09-07T06:00:00.000Z",
+  "images": [
+    "https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/main/public/posters/teach-ar.png"
+  ]
+}
