@@ -1,0 +1,22 @@
+# One-click deploy for Render: https://render.com/docs/deploy-a-repo
+# After the first deploy, set PUBLIC_BASE_URL to your service URL
+# (e.g. https://livepost-xxxx.onrender.com) in the Render dashboard.
+services:
+  - type: web
+    name: livepost
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_BASE_URL
+        sync: false # set this to your deployed URL for correct OAuth redirects
+      - key: DATA_DIR
+        value: /var/data # keep credentials/history on the attached disk
+    disk: # keeps credentials + post history across deploys (paid feature)
+      name: livepost-data
+      mountPath: /var/data
+      sizeGB: 1

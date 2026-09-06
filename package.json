@@ -1,0 +1,17 @@
+{
+  "name": "livepost",
+  "version": "1.0.0",
+  "description": "Live-post text and images to X (Twitter), Facebook, Instagram and LinkedIn from one dashboard.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
