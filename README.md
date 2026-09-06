@@ -40,6 +40,17 @@ The Connections tab shows the exact **Redirect URI** to register for each OAuth 
 - X: 280 chars · LinkedIn: 3,000 chars (text required) · Instagram: 2,200 char caption (image required) · Facebook: 63,206 chars
 - X free tier allows a limited number of posts per day/month; Instagram & LinkedIn tokens last ~60 days (the UI shows days remaining; hit Test/Connect again to refresh).
 
+## Quick test with mock APIs (no real credentials needed)
+
+The repo includes a local mock of all four platform APIs so you can try the full flow — connect, compose, publish, history — without developer credentials or internet access:
+
+```bash
+node test/mock-platforms.js     # terminal 1 — mock APIs on :3100
+node test/with-mock-apis.js     # terminal 2 — LivePost on :3000, API calls redirected to the mock
+```
+
+Demo credentials are printed at http://localhost:3100/ (e.g. X: `demo-key` / `demo-secret` / `demo-token` / `demo-token-secret`, Facebook page: `demo_page` + `demo-page-token`, …). Paste them into the Connections tab (or `POST /api/connect/...`), then compose and publish. The mock verifies the X OAuth 1.0a HMAC-SHA1 signature for real and emulates image uploads, so every code path runs exactly as it would against the live APIs — nothing is posted to real platforms in this mode.
+
 ## Configuration
 
 | Environment variable | Purpose |
