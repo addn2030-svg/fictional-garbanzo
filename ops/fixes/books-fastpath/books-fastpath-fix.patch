@@ -1,0 +1,325 @@
+From 6901afe95947f95f503703c42f0752d6130f480e Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.local>
+Date: Sun, 6 Sep 2026 20:02:37 +0000
+Subject: [PATCH] fix(books): tolerate learning-tab name variants and stop
+ silent fallthrough to 'unknown command'
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Normalize tab titles (NFKC, strip diacritics/tatweel, fold alef/hamza, collapse spaces)
+  and discover learning tabs tolerantly so a trailing space/diacritic no longer yields
+  zero books.
+- live_books: catch structured-extraction errors and still run the proven search
+  fallback; log a diagnostic '[books_context] live_books -> N book(s) (..)'.
+- Telegram: explicit /books now replies with the real reason instead of falling through
+  to 'أمر غير معروف'; register 'books' in the command list (setMyCommands).
+- Tests: 4 new regression tests; full suite 164 passed.
+---
+ connectors/telegram_bot.py  |  30 ++++++++---
+ engine/books_context.py     | 105 ++++++++++++++++++++++++++++++++----
+ tests/test_books_context.py |  73 +++++++++++++++++++++++++
+ 3 files changed, 190 insertions(+), 18 deletions(-)
+ create mode 100644 tests/test_books_context.py
+
+diff --git a/connectors/telegram_bot.py b/connectors/telegram_bot.py
+index 2728427..2ee444f 100644
+--- a/connectors/telegram_bot.py
++++ b/connectors/telegram_bot.py
+@@ -210,19 +210,34 @@ def _books_fast_path(raw: str, message: dict) -> bool:
+         from books_context import live_books, suggest_line
+     except ImportError:
+         from engine.books_context import live_books, suggest_line
+-    try:
+-        books, err = live_books()
+-    except Exception as exc:  # noqa: BLE001
+-        print(f"Books fast-path read failed: {exc}", flush=True)
+-        return False
+-    if not books:
+-        return False
++
+     chat = message.get("chat") or {}
+     chat_id = chat.get("id")
+     if chat_id is None:
+         return False
+     if not _impl._authorized(chat_id, chat.get("type", "")):
+         return False
++
++    try:
++        books, err = live_books()
++    except Exception as exc:  # noqa: BLE001
++        print(f"Books fast-path read failed: {exc}", flush=True)
++        books, err = [], str(exc)[:160]
++
++    if not books:
++        # Explicit /books must never fall through to "أمر غير معروف". Report the
++        # real reason (tab/data/gateway) so silent zero-results are diagnosable.
++        if is_books_command:
++            detail = f"\nالسبب: {err}" if err else ""
++            _impl.send(
++                chat_id,
++                "📚 لم أستطع قراءة قائمة الكتب من شيت «المصادر والتعلم العلمي».\n"
++                "تحققت من المسار بسرعة لكن لم أجد صفوف نوعها «كتاب»." + detail +
++                "\nيمكنك استخدام /find كتاب للبحث في الشيت، أو مراجعة سطور "
++                "[books_context] في سجل النشر.",
++            )
++            return True
++        return False
+     lines = ["📚 قائمة كتبك الحقيقية (من شيت «المصادر والتعلم العلمي»):"]
+     for b in books:
+         extra = f" — مرتبط بـ: {b['goal']}" if b.get("goal") else ""
+@@ -309,6 +324,7 @@ def _configure_commands():
+         commands = _impl.api("getMyCommands") or []
+         existing = {str(item.get("command", "")) for item in commands}
+         additions = [
++            {"command": "books", "description": "قائمة كتبك من شيت «المصادر والتعلم» مباشرة"},
+             {"command": "manager", "description": "رئيس الأركان: تحليل وربط وتوصية"},
+             {"command": "manager_shadow", "description": "قارن Legacy وSuper Manager بلا تنفيذ"},
+             {"command": "manager_status", "description": "حالة Super Manager"},
+diff --git a/engine/books_context.py b/engine/books_context.py
+index 4b2bea6..8e4627b 100644
+--- a/engine/books_context.py
++++ b/engine/books_context.py
+@@ -16,9 +16,11 @@ Place at: engine/books_context.py
+ """
+ from __future__ import annotations
+ 
++import re
++import unicodedata
+ from typing import Any
+ 
+-VERSION = "v3.0"
++VERSION = "v3.1"
+ 
+ # Candidate tab names, in priority order. The live sheet uses
+ # «المصادر والتعلم العلمي»; «مكتبة القراءة» and «تعلم» are fallbacks.
+@@ -57,6 +59,49 @@ def _status_priority(status: Any) -> int:
+     return 9
+ 
+ 
++def _norm_tab(name: Any) -> str:
++    """Normalize a tab title for tolerant matching.
++
++    Real sheets often differ by a trailing space, tatweel/diacritic, or Arabic
++    presentation-form characters. Exact equality missed «المصادر والتعلم العلمي »
++    (trailing space) and silently returned zero books, so we normalize both sides.
++    """
++    s = str(name or "")
++    s = unicodedata.normalize("NFKC", s)          # fold Arabic presentation forms
++    s = re.sub(r"[ـ]", "", s)                      # tatweel
++    s = re.sub(r"[ؐ-ًؚ-ٰٟۖ-ۭ]", "", s)           # diacritics/tashkeel
++    s = s.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
++    s = re.sub(r"\s+", " ", s).strip()
++    return s
++
++
++# Markers that identify a books/learning tab after normalization.
++_LEARNING_HINTS = ("المصادر", "التعلم", "التعلّم", "القراءة", "مكتبة", "الكتب", "تعلم")
++
++
++def _is_learning_tab(tab_title: str) -> bool:
++    t = _norm_tab(tab_title)
++    if not t:
++        return False
++    norm_targets = {_norm_tab(x) for x in LEARNING_TABS}
++    if t in norm_targets:
++        return True
++    # tolerant: a title that both names the shelf (sources/reading/library) AND
++    # mentions learning/reading — avoids matching unrelated operational tabs.
++    has_shelf = any(h in t for h in ("المصادر", "مكتبة", "القراءة", "الكتب"))
++    has_learning = any(h in t for h in ("التعلم", "التعلّم", "تعلم", "قراءة"))
++    return has_shelf and has_learning
++
++
++def _learning_tabs_from(snapshot_keys) -> list[str]:
++    """Return the actual snapshot tab titles that look like a books/learning tab."""
++    matches = [k for k in snapshot_keys if _is_learning_tab(k)]
++    # canonical names first, then any others, preserving snapshot order
++    canonical = [k for k in matches if _norm_tab(k) in {_norm_tab(x) for x in LEARNING_TABS}]
++    others = [k for k in matches if k not in canonical]
++    return canonical + others
++
++
+ def _find_column(header: list, *names: str) -> int:
+     for i, h in enumerate(header or []):
+         cell = str(h or "").strip()
+@@ -101,12 +146,29 @@ def extract_books(snapshot_data: dict, tabs: Any = None) -> list[dict]:
+     gateway `snapshot` action (first row is usually the header).
+     """
+     if tabs is None:
+-        tabs = LEARNING_TABS
+-    if isinstance(tabs, str):
+-        tabs = [tabs]
++        requested = _learning_tabs_from(snapshot_data.keys()) or LEARNING_TABS
++    elif isinstance(tabs, str):
++        requested = [tabs]
++    else:
++        requested = list(tabs)
++
++    # Map requested names to the real snapshot keys using tolerant normalization;
++    # fall back to auto-discovery if a canonical name is not present verbatim.
++    real_titles: list[str] = []
++    for name in requested:
++        exact = snapshot_data.get(name)
++        if exact is not None:
++            real_titles.append(name)
++        else:
++            norm = _norm_tab(name)
++            for key in snapshot_data.keys():
++                if key not in real_titles and _norm_tab(key) == norm:
++                    real_titles.append(key)
++    if not real_titles and tabs is None:
++        real_titles = _learning_tabs_from(snapshot_data.keys())
+ 
+     books: list[dict] = []
+-    for tab_name in tabs:
++    for tab_name in real_titles:
+         tab = snapshot_data.get(tab_name) or []
+         if not tab:
+             continue
+@@ -211,28 +273,47 @@ def live_books(max_rows: int = 60):
+         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+         from connectors import sheet_intelligence as si
+         if not si.configured():
++            print(f"[books_context v{VERSION}] gateway not configured", flush=True)
+             return [], "gateway not configured"
+         data = si.snapshot(max_rows=max_rows, max_cols=16)
+-        books = extract_books(data)
++        books: list[dict] = []
++        extract_error = ""
++        try:
++            books = extract_books(data)
++        except Exception as exc:  # never let structured extraction skip the fallback
++            extract_error = f"{type(exc).__name__}: {str(exc)[:120]}"
+         if not books:
+-            books = _books_from_search(si)
++            try:
++                books = _books_from_search(si, data)
++            except Exception as exc:
++                if not extract_error:
++                    extract_error = f"search: {type(exc).__name__}: {str(exc)[:120]}"
+         print(
+             f"[books_context v{VERSION}] live_books -> {len(books)} book(s) "
+-            f"via snapshot-first",
++            f"(tabs_checked={len(_learning_tabs_from(data.keys()))}"
++            f"{', extract_error=' + extract_error if extract_error else ''})",
+             flush=True,
+         )
++        if not books:
++            return [], (extract_error or "no book rows found in learning tabs")
+         return books, ""
+     except Exception as e:  # pragma: no cover - live path
++        print(f"[books_context v{VERSION}] live_books error: {str(e)[:160]}", flush=True)
+         return [], str(e)[:200]
+ 
+ 
+-def _books_from_search(si, tab_names=None, max_results=60) -> list[dict]:
++def _books_from_search(si, data=None, max_results=60) -> list[dict]:
+     """Rebuild the books list from the gateway `search` action (proven path).
+ 
+     Each result row looks like the `/find كتاب` output, e.g.
+     ["Essentialism — Greg McKeown", "كتاب", "الأولويات", ..., "لم يبدأ", ...].
++    Tab membership is matched tolerantly (a trailing space/diacritic must not
++    hide a row), and auto-discovered learning tabs are accepted when `data`
++    (the snapshot dict) is supplied.
+     """
+-    tab_names = tab_names or LEARNING_TABS
++    snapshot_keys = list((data or {}).keys())
++    learning = set(LEARNING_TABS) | set(_learning_tabs_from(snapshot_keys))
++    norm_learning = {_norm_tab(t) for t in learning}
+     try:
+         results = si.search("كتاب", max_results)
+     except Exception:
+@@ -241,7 +322,9 @@ def _books_from_search(si, tab_names=None, max_results=60) -> list[dict]:
+     books: list[dict] = []
+     seen_titles: set[str] = set()
+     for r in results:
+-        if r.get("sheet") not in tab_names:
++        sheet = str(r.get("sheet") or "")
++        in_learning = _norm_tab(sheet) in norm_learning or _is_learning_tab(sheet)
++        if not in_learning:
+             continue
+         values = [str(v or "").strip() for v in r.get("values", [])]
+         if "كتاب" not in values:
+diff --git a/tests/test_books_context.py b/tests/test_books_context.py
+new file mode 100644
+index 0000000..bdc24d4
+--- /dev/null
++++ b/tests/test_books_context.py
+@@ -0,0 +1,73 @@
++# -*- coding: utf-8 -*-
++"""Regression tests for the books/learning shelf fast path.
++
++Covers the production issue where /books replied "أمر غير معروف" because the
++learning tab name did not match exactly (trailing space / diacritic) and the
++search fallback filtered rows by exact tab title.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++
++from engine import books_context as bc  # noqa: E402
++
++_HEADER = ["العنوان", "النوع", "المجال", "الحالة"]
++_ROWS = [
++    ["Essentialism — Greg McKeown", "كتاب", "الأولويات", "لم يبدأ"],
++    ["Atomic Habits - James Clear", "كتاب", "بناء العادات", "لم يبدأ"],
++]
++
++
++def _snapshot(tab_name: str) -> dict:
++    return {tab_name: [list(_HEADER)] + [list(r) for r in _ROWS]}
++
++
++def test_exact_tab_name_extracts_books():
++    assert len(bc.extract_books(_snapshot("المصادر والتعلم العلمي"))) == 2
++
++
++def test_tab_name_variants_still_extract_books():
++    for variant in [
++        "المصادر والتعلم العلمي ",      # trailing space
++        "المصادر والتعلّم العلمي",       # diacritic on lam
++        "المصادر و التعلم العلمي",       # spaces around واو
++        "مكتبة المصادر والتعلم العلمي",  # prefixed shelf word
++    ]:
++        assert len(bc.extract_books(_snapshot(variant))) == 2, variant
++
++
++def test_operational_tabs_do_not_produce_false_books():
++    # «كتابة» must not be mistaken for «كتاب»; non-learning tabs are skipped.
++    data = {
++        "لوحة التحكم": [["المهمة", "التصنيف", "الحالة"],
++                        ["كتابة المتطلبات والنموذج الأولي", "تطوير", "قيد التنفيذ"]],
++        "التطوير الشخصي": [["المجال", "النشاط"], ["الذكاء الاصطناعي", "بناء الوكلاء"]],
++    }
++    assert bc.extract_books(data) == []
++
++
++class _FakeSheetIntelligence:
++    """Mimics connectors.sheet_intelligence for the search fallback."""
++
++    def __init__(self, results):
++        self._results = results
++
++    def search(self, query, max_results=60):
++        assert query == "كتاب"
++        return self._results
++
++
++def test_search_fallback_matches_tab_tolerantly():
++    results = [
++        {"sheet": "المصادر والتعلم العلمي ", "row": 3,
++         "values": ["Essentialism — Greg McKeown", "كتاب", "الأولويات", "لم يبدأ"]},
++        # operational tab mentioning «كتابة» must be excluded
++        {"sheet": "لوحة التحكم", "row": 33,
++         "values": ["بناء الوكلاء", "كتابة المتطلبات", "تطوير"]},
++    ]
++    si = _FakeSheetIntelligence(results)
++    books = bc._books_from_search(si, {"المصادر والتعلم العلمي ": [_HEADER] + _ROWS})
++    assert [b["title"] for b in books] == ["Essentialism — Greg McKeown"]
+-- 
+2.39.5
+
