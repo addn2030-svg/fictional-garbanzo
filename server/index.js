@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const store = require('./store');
 const { publishPost } = require('./publish');
 const platforms = require('./platforms');
-const { ApiError } = require('./http');
+const { ApiError, fetchText } = require('./http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -174,6 +174,33 @@ app.post('/api/disconnect/:platform', (req, res) => {
 app.get('/api/posts', (req, res) => {
   res.json({ posts: store.getPosts().slice(0, 100) });
 });
+
+// ---------------- connectivity check ----------------
+
+/**
+ * Checks whether THIS server can reach each platform's API host — the first
+ * thing to verify when going live in a new environment (some networks only
+ * allow specific hosts). Any HTTP response (even 401/404) means reachable.
+ */
+app.get('/api/netcheck', wrap(async (req, res) => {
+  const hosts = {
+    twitter: 'https://api.x.com/2/tweets',
+    facebook: 'https://graph.facebook.com/v23.0/me',
+    instagram: 'https://graph.instagram.com/v23.0/me',
+    linkedin: 'https://api.linkedin.com/v2/userinfo',
+  };
+  const out = {};
+  await Promise.all(Object.entries(hosts).map(async ([p, url]) => {
+    const started = Date.now();
+    try {
+      const { res: r } = await fetchText(url, { method: 'GET' }, 8000);
+      out[p] = { reachable: true, status: r.status, ms: Date.now() - started };
+    } catch (e) {
+      out[p] = { reachable: false, error: e?.cause?.code || e?.name || e?.message || 'network error', ms: Date.now() - started };
+    }
+  }));
+  res.json({ netcheck: out });
+}));
 
 // ---------------- publish ----------------
 

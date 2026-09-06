@@ -11,6 +11,25 @@ npm start          # → http://localhost:3000
 
 ---
 
+## 🚀 Going live (real posting)
+
+Real posting needs two things this dev sandbox can't provide: **outbound internet on the server** and **your developer credentials**. Do this:
+
+**Step 1 — Run the server where it has internet.** Pick one:
+
+| Option | How |
+|---|---|
+| Your computer | `npm install && npm start` → open http://localhost:3000 (OAuth redirect URIs can be `http://localhost:3000/...` during development) |
+| Docker | `docker build -t livepost . && docker run -p 3000:3000 -v livepost-data:/app/data livepost` |
+| Render (one-click) | Push this repo to GitHub → "New → Blueprint" in Render → it reads `render.yaml`. Set `PUBLIC_BASE_URL` to the deployed URL. |
+| Railway / Fly / VPS | Any Node 18+ host: `npm ci --omit=dev && npm start`, set `PORT` and `PUBLIC_BASE_URL` |
+
+**Step 2 — Verify connectivity.** On the Connections tab, click **"Check this server can reach the platform APIs"** — all four must show ✓ reachable.
+
+**Step 3 — Connect platforms.** On the Connections tab each card has numbered steps and the exact redirect URI to register in that platform's developer console. Connect all four (X = paste 4 keys, the others = one-click OAuth or paste a token).
+
+**Step 4 — Go.** Compose → select platforms → **Publish now**. Check the History tab: green ✓ with a "View" link means it's live on the platform.
+
 ## How it works
 
 1. **Connections tab** — connect each platform once (keys or OAuth login, with step-by-step instructions in each card).
@@ -88,8 +107,9 @@ curl -X POST http://localhost:3000/api/publish \
 Any Node host works (Render, Railway, Fly.io, a VPS with `npm start`, Docker…). Notes:
 
 - Set `PUBLIC_BASE_URL` to your public HTTPS URL so OAuth redirects are built correctly.
+- Set `DATA_DIR` (e.g. a mounted volume/disk path) so credentials and history survive restarts — see `Dockerfile` and `render.yaml`.
 - Facebook/Instagram/LinkedIn app consoles must have the exact redirect URI registered (HTTPS, except `http://localhost` for local dev).
-- Persist the `data/` directory if you want credentials and history to survive restarts.
+- On Render's free plan there's no persistent disk: credentials re-prompt after each deploy unless you attach a disk or set `DATA_DIR` to a mounted path.
 
 ## Security notes
 

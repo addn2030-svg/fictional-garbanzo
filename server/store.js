@@ -5,7 +5,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// DATA_DIR lets hosts (Docker volumes, Render disks, …) persist credentials
+// and history outside the code directory.
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const SETTINGS_FILE = 'settings.json';
 const POSTS_FILE = 'posts.json';
 const MAX_POSTS = 500;

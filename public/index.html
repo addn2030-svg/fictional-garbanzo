@@ -74,6 +74,10 @@
         <h2>Platform connections</h2>
         <p>LivePost publishes through the official platform APIs, so each platform needs its own developer credentials.
           Follow the steps in each card. Credentials are stored locally on this server only (<code>data/settings.json</code>).</p>
+        <div class="netcheck">
+          <button class="btn small" id="netcheck-btn">Check this server can reach the platform APIs</button>
+          <div id="netcheck-results"></div>
+        </div>
       </div>
       <div id="connections-grid" class="connections-grid"></div>
     </section>

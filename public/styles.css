@@ -173,6 +173,10 @@ textarea:focus, input:focus { border-color: var(--accent); }
 .conn-intro { margin-bottom: 18px; }
 .conn-intro p { color: var(--muted); margin: 0; }
 .conn-intro code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
+.netcheck { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+#netcheck-results { display: flex; flex-wrap: wrap; gap: 8px; }
+#netcheck-results .counter { display: inline-flex; align-items: center; gap: 6px; }
+#netcheck-results .counter svg { flex: none; }
 .connections-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
 .conn-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
 .cc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }

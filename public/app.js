@@ -555,6 +555,29 @@
     }
   });
 
+  // ---------- netcheck ----------
+  $('#netcheck-btn').addEventListener('click', async () => {
+    const btn = $('#netcheck-btn');
+    const out = $('#netcheck-results');
+    btn.disabled = true;
+    out.innerHTML = '<span class="counter">checking…</span>';
+    try {
+      const d = await api('/api/netcheck');
+      out.innerHTML = Object.entries(d.netcheck).map(([p, r]) => {
+        const meta = PLATFORMS[p];
+        const label = r.reachable
+          ? `✓ reachable (HTTP ${r.status} · ${r.ms}ms)`
+          : `✗ blocked (${r.error})`;
+        return `<span class="counter ${r.reachable ? '' : 'over'}">${ICONS[p]} ${esc(meta.short)} ${esc(label)}</span>`;
+      }).join(' ');
+    } catch (e) {
+      out.innerHTML = '';
+      toast(e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   // ---------- boot ----------
   async function boot() {
     const params = new URLSearchParams(location.search);
