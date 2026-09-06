@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LivePost — X · Facebook · Instagram · LinkedIn</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231d9bf0'/%3E%3Cpath d='M13.5 3 6 13h4.5L10 21l7.5-10H13l.5-8z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1d9bf0"/><path d="M13.5 3 6 13h4.5L10 21l7.5-10H13l.5-8z" fill="#fff"/></svg>
+      </span>
+      <div class="brand-text">
+        <strong>LivePost</strong>
+        <span class="tagline">One post → X · Facebook · Instagram · LinkedIn</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="compose" role="tab">Compose</button>
+      <button class="tab" data-tab="history" role="tab">History <span class="badge" id="history-count"></span></button>
+      <button class="tab" data-tab="connections" role="tab">Connections <span class="dot-strip" id="dot-strip"></span></button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============ COMPOSE ============ -->
+    <section id="tab-compose" class="tabpanel active">
+      <div class="compose-grid">
+        <div class="panel editor">
+          <h2>Compose your live post</h2>
+
+          <label class="field-label" for="post-text">Text</label>
+          <textarea id="post-text" rows="7" placeholder="What's happening? This goes live on every selected platform when you hit Publish…"></textarea>
+          <div class="counters" id="counters"></div>
+
+          <label class="field-label" for="post-image">Image URL <span class="optional">optional — must be publicly reachable (https://…)</span></label>
+          <input type="url" id="post-image" placeholder="https://example.com/photo.jpg" spellcheck="false">
+
+          <div class="field-label">Publish to</div>
+          <div class="platform-toggles" id="platform-toggles"></div>
+
+          <button id="publish-btn" class="btn primary big" disabled>
+            <span class="btn-label">Publish now</span>
+            <span class="spinner hidden"></span>
+          </button>
+          <div class="publish-hint" id="publish-hint"></div>
+          <div id="publish-results"></div>
+        </div>
+
+        <div class="panel previews">
+          <h2>Live previews</h2>
+          <div id="previews" class="preview-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section id="tab-history" class="tabpanel">
+      <div class="panel">
+        <div class="history-head">
+          <h2>Post history</h2>
+          <button class="btn ghost" id="refresh-history">Refresh</button>
+        </div>
+        <div id="history-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ CONNECTIONS ============ -->
+    <section id="tab-connections" class="tabpanel">
+      <div class="conn-intro panel">
+        <h2>Platform connections</h2>
+        <p>LivePost publishes through the official platform APIs, so each platform needs its own developer credentials.
+          Follow the steps in each card. Credentials are stored locally on this server only (<code>data/settings.json</code>).</p>
+      </div>
+      <div id="connections-grid" class="connections-grid"></div>
+    </section>
+  </main>
+
+  <div id="toast-wrap"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
