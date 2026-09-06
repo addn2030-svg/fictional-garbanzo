@@ -25,6 +25,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+from typing import Any
 
 from engine import store
 
@@ -35,21 +36,38 @@ def _writable(directory: str) -> bool:
         os.makedirs(directory, exist_ok=True)
         with open(probe, "w", encoding="utf-8") as handle:
             handle.write("ok")
-        os.remove(probe)
         return True
     except OSError:
         return False
+    finally:
+        # Cleanup in finally so an unexpected error between write and remove
+        # cannot leave a stray probe file on the volume.
+        try:
+            os.remove(probe)
+        except OSError:
+            pass
 
 
 def _under(path: str, parent: str) -> bool:
+    """True when `path` is `parent` or lives inside it.
+
+    commonpath rather than a startswith prefix test: startswith fails when
+    parent is the filesystem root, because "/" + os.sep is "//" and nothing
+    starts with that. commonpath also normalises trailing slashes and ".."
+    segments, and still rejects sibling prefixes such as /database vs /data.
+    """
     if not path or not parent:
         return False
     path = os.path.abspath(path)
     parent = os.path.abspath(parent)
-    return path == parent or path.startswith(parent + os.sep)
+    try:
+        return os.path.commonpath([parent, path]) == parent
+    except ValueError:
+        # Different drives on Windows, or a mix of absolute and relative.
+        return False
 
 
-def snapshot() -> dict:
+def snapshot() -> dict[str, Any]:
     """Facts about the state directory. Never raises."""
     data_dir = store.DATA_DIR
     state_path = store.STATE_PATH
@@ -93,7 +111,7 @@ def snapshot() -> dict:
     }
 
 
-def report() -> dict:
+def report() -> dict[str, Any]:
     """Print the startup evidence line. Returns the snapshot."""
     facts = snapshot()
 

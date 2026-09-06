@@ -122,7 +122,28 @@ Commit. Railway redeploys on push.
 
 ---
 
+## Step 5 — tests and CI (optional, recommended)
+
+Create `tests/test_state_evidence.py` and `tests/test_sheets_write_guard.py` from
+this folder's `tests/`. They are `unittest`, matching the repo — not pytest.
+
+Then add them to the runner in `.github/workflows/production-model-router.yml`,
+at the end of the `python -m unittest` module list (~line 79):
+
+```yaml
+          tests.test_state_evidence
+          tests.test_sheets_write_guard
+```
+
+Without this the files exist but never execute: that workflow enumerates modules
+explicitly rather than discovering them.
+
+Verified locally: 183 tests pass — 148 existing plus 35 new.
+
+---
+
 ## What you should see at boot
+
 
 ```
 Sheets production route: direct-first | service_account=... valid=True

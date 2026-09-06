@@ -136,9 +136,39 @@ B (mount /data, state /tmp/…): durable False,
   "volume is mounted at /data but state lives in /tmp/… Set AI_OS_DATA_DIR=/data"
 ```
 
+## D7 — `_under` and the filesystem root (found by GitHub Copilot review)
+
+```python
+return path == parent or path.startswith(parent + os.sep)
+```
+
+When `parent` is `/`, `parent + os.sep` is `//`, and no path starts with that —
+so `_under("/data", "/")` returned `False`. Copilot's report was correct and its
+suggested fix (`os.path.commonpath`) is the right one; applied verbatim.
+
+Practical impact here is low, because Railway will not let you mount a volume at
+`/`. But commonpath is strictly better anyway: it normalises trailing slashes and
+`..` segments, and still rejects sibling prefixes such as `/database` vs `/data`.
+Verified across 9 cases — the old implementation was wrong in 1, the new one in 0.
+
+Copilot's two secondary suggestions were also taken: `_writable` now removes its
+probe file in a `finally` block, and `snapshot`/`report` are annotated
+`dict[str, Any]`.
+
+One suggestion was **declined**: narrowing `except Exception` in `snapshot()`.
+This runs at boot, before the HTTP server starts, and its job is to describe a
+possibly-broken state file. An unexpected exception type there would crash the
+container instead of printing `version=-1`. Breadth is the point.
+
+One was **corrected**: Copilot proposed a pytest file. This repo uses `unittest`,
+and `.github/workflows/production-model-router.yml` runs an explicit module list
+— a pytest file would never have executed in CI. Tests are written as `unittest`
+and the workflow list needs the two new entries (PATCH.md Step 5).
+
 ---
 
 ## Test evidence
+
 
 Run against the real `engine.store` and the real `sheet_intelligence`, with the
 Sheets client faked at the transport boundary.

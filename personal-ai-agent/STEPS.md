@@ -249,7 +249,34 @@ Commit message: `Install Sheets write guard at the production entrypoint`
 
 ---
 
+## STEP 4.5 — tests (optional, recommended)
+
+Two test files, written in `unittest` style to match the repo. 35 tests covering
+the retry rules, the timeout paths, the key-column mapping, and the durability
+logic.
+
+1. **Add file** → **Create new file** → `tests/test_sheets_write_guard.py` → paste
+   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/HEAD/personal-ai-agent/tests/test_sheets_write_guard.py
+2. **Add file** → **Create new file** → `tests/test_state_evidence.py` → paste
+   from https://raw.githubusercontent.com/addn2030-svg/fictional-garbanzo/HEAD/personal-ai-agent/tests/test_state_evidence.py
+
+Then wire them into CI, or they will never run. Edit
+`.github/workflows/production-model-router.yml`, find the `python -m unittest`
+list (around line 79), and add two lines at the end of it:
+
+```yaml
+          tests.test_state_evidence
+          tests.test_sheets_write_guard
+```
+
+Match the existing indentation exactly — YAML is strict about it.
+
+✅ Check: the Actions tab shows the workflow running 183 tests instead of 148.
+
+---
+
 ## STEP 5 — Railway variables
+
 
 Railway → your service → **Variables**.
 
