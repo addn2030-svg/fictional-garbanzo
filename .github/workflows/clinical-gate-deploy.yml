@@ -1,0 +1,30 @@
+name: Clinical Gate Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clinical/**"
+      - ".github/workflows/clinical-gate-deploy.yml"
+  pull_request:
+    paths:
+      - "clinical/**"
+      - ".github/workflows/clinical-gate-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  clinical-gate:
+    name: Clinical gate + scorecard tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run clinical gate and reviewer scorecard tests
+        working-directory: clinical
+        run: python test_clinical_gate.py
