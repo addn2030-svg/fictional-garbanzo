@@ -1,0 +1,2 @@
+date,case_code,modality,what_the_system_said,what_you_changed,derived_rule,edge_case_where_rule_misfires,status
+2026-09-07,SHLD-001,MANUAL,"rejected the Mulligan MWM and Maitland plan outright despite a documented within-session flexion gain","kept the intervention, reclassified it under MANUAL with justification","an out-of-package technique with a documented within-session response is reclassified, not rejected","a technique outside the clinician's certification must still be rejected, not reclassified",ACTIVE
