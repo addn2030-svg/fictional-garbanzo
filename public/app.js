@@ -38,6 +38,25 @@
     return `${Math.floor(h / 24)} d ago`;
   }
 
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    // Clipboard API is unavailable on some preview hosts. Keep manual copy
+    // useful there too, without adding a dependency.
+    const helper = document.createElement('textarea');
+    helper.value = text;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand('copy');
+    helper.remove();
+    if (!copied) throw new Error('Clipboard access was blocked — select the text and copy it manually.');
+  }
+
   // ---------- platform metadata ----------
   const ICONS = {
     twitter: '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644Z"/></svg>',
@@ -54,6 +73,79 @@
   };
   const PLATFORM_IDS = Object.keys(PLATFORMS);
 
+  // The supplied LinkedIn draft is kept in the client so it can be reviewed or
+  // copied without needing a connected account. Loading it never publishes it.
+  const FEATURED_DRAFT = Object.freeze({
+    title: 'Neck muscle spasms & driving',
+    platform: 'linkedin',
+    text: `🚗 Do You Drive More Than 30 Minutes Daily?
+
+Your neck muscles might be paying the price.
+
+As a Senior Physical Therapist with 20+ years
+of experience, I see this pattern every week:
+
+❌ Stiff neck after long drives
+❌ Shoulder tension that won't go away
+❌ Headaches starting from the base of skull
+❌ Pain that gets worse by end of day
+
+WHY DOES THIS HAPPEN?
+
+When driving, your body holds ONE position
+for extended periods:
+
+→ Head slightly forward
+→ Shoulders raised unconsciously
+→ Neck muscles in constant static contraction
+→ Blood flow reduced to cervical muscles
+→ Result: SPASM + PAIN + STIFFNESS
+
+THE 5-MINUTE DRIVING RECOVERY PROTOCOL:
+
+✅ 1. Chin Tucks (Every 30 min while stopped)
+   → Pull chin straight back
+   → Hold 5 seconds × 10 reps
+
+✅ 2. Shoulder Blade Squeeze
+   → Squeeze shoulder blades together
+   → Hold 5 seconds × 10 reps
+
+✅ 3. Neck Side Stretch
+   → Ear to shoulder gently
+   → Hold 30 seconds each side
+
+✅ 4. Upper Trap Release
+   → Drop shoulder away from ear
+   → Deep breath + release tension
+
+✅ 5. Seat Position Check
+   → Headrest at ear level
+   → Seat back at 100-110 degrees
+   → Steering wheel at elbow height
+
+🔴 RED FLAGS — See a PT immediately if:
+→ Pain radiates down your arm
+→ Numbness or tingling in fingers
+→ Weakness in arm or hand
+→ Severe headache with neck pain
+
+💡 Prevention is always better than treatment.
+
+Your neck deserves better than rush hour traffic.
+
+─────────────────────────────
+👨‍⚕️ Abdulrahman Howsawy
+Senior Physical Therapist
+Head of Rehabilitation | RCHSP
+─────────────────────────────
+
+#PhysicalTherapy #NeckPain #DrivingHealth
+#Rehabilitation #NeckSpasm #PTAdvice
+#HealthTips #SpinalHealth #SaudiHealth
+#العلاجالطبيعي`,
+  });
+
   // ---------- state ----------
   const state = {
     status: null,     // /api/status
@@ -62,6 +154,48 @@
     selected: new Set(),
     publishing: false,
   };
+
+  function renderSafetyNote() {
+    const copy = $('#safety-copy');
+    if (!copy) return;
+    const count = state.status
+      ? PLATFORM_IDS.filter((p) => connected(p)).length
+      : 0;
+    copy.textContent = count
+      ? `${count} account${count === 1 ? '' : 's'} connected. Nothing is published until you press Publish now; you can still copy the draft for manual posting.`
+      : 'No social account is connected yet. Copy the draft for LinkedIn, or connect an account before publishing.';
+  }
+
+  function updateDraftLength() {
+    const length = [...$('#post-text').value].length;
+    const label = $('#draft-length');
+    if (!label) return;
+    label.textContent = `${length.toLocaleString()} / ${PLATFORMS.linkedin.limit.toLocaleString()}`;
+    label.classList.toggle('over', length > PLATFORMS.linkedin.limit);
+  }
+
+  function applyFeaturedDraft({ confirmReplace = true, silent = false } = {}) {
+    const text = $('#post-text').value;
+    if (confirmReplace && text.trim() && text !== FEATURED_DRAFT.text) {
+      const replace = window.confirm('Replace the current text with the prepared LinkedIn draft?');
+      if (!replace) return false;
+    }
+    $('#post-text').value = FEATURED_DRAFT.text;
+    if (connected(FEATURED_DRAFT.platform)) state.selected.add(FEATURED_DRAFT.platform);
+    updateCompose();
+    if (!silent) toast('LinkedIn draft loaded — review it before publishing.', 'ok');
+    return true;
+  }
+
+  async function copyCurrentPost() {
+    const text = $('#post-text').value || FEATURED_DRAFT.text;
+    try {
+      await copyText(text);
+      toast('Post copied — ready to paste into LinkedIn.', 'ok');
+    } catch (e) {
+      toast(e.message, 'err');
+    }
+  }
 
   // ---------- tabs ----------
   function setTab(name) {
@@ -78,6 +212,7 @@
     try {
       state.status = await api('/api/status');
       renderDots();
+      renderSafetyNote();
       renderToggles();
       updateCompose();
     } catch (e) { toast(e.message, 'err'); }
@@ -217,6 +352,8 @@
 
   function updateCompose() {
     const problems = clientProblems();
+    updateDraftLength();
+    renderSafetyNote();
     const btn = $('#publish-btn');
     btn.disabled = problems.length > 0 || state.publishing;
     const hint = $('#publish-hint');
@@ -228,6 +365,9 @@
   }
 
   ['#post-text', '#post-image'].forEach((sel) => $(sel).addEventListener('input', updateCompose));
+  $('#load-draft-btn').addEventListener('click', () => applyFeaturedDraft());
+  $('#copy-post-btn').addEventListener('click', copyCurrentPost);
+  $('#open-connections').addEventListener('click', () => setTab('connections'));
 
   // ---------- publish ----------
   $('#publish-btn').addEventListener('click', async () => {
@@ -592,8 +732,10 @@
     history.replaceState(null, '', location.pathname);
 
     await Promise.all([loadStatus(), loadSettings()]);
-    // preselect every connected platform
-    PLATFORM_IDS.forEach((p) => { if (connected(p)) state.selected.add(p); });
+    // This supplied copy is a LinkedIn draft, so keep the initial publish
+    // target focused there instead of silently selecting every account.
+    PLATFORM_IDS.forEach((p) => state.selected.delete(p));
+    applyFeaturedDraft({ confirmReplace: false, silent: true });
     updateCompose();
     loadPosts();
   }

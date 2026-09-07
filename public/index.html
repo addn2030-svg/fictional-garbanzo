@@ -28,12 +28,48 @@
   <main>
     <!-- ============ COMPOSE ============ -->
     <section id="tab-compose" class="tabpanel active">
+      <div class="compose-intro">
+        <div>
+          <div class="eyebrow">Draft workspace</div>
+          <h1>Review once. Publish everywhere.</h1>
+          <p>Your prepared LinkedIn post is loaded below. Edit it, copy it for manual posting, or connect an account when you are ready to publish.</p>
+        </div>
+        <span class="draft-pill"><span class="draft-pill-dot"></span> Ready to review</span>
+      </div>
+
+      <div class="safety-note" id="safety-note">
+        <span class="safety-icon" aria-hidden="true">✓</span>
+        <div>
+          <strong>Manual-post mode is always available</strong>
+          <span id="safety-copy">No social account is connected yet. Copy the draft for LinkedIn, or connect an account before publishing.</span>
+        </div>
+        <button class="btn small ghost" id="open-connections" type="button">Manage connections</button>
+      </div>
+
       <div class="compose-grid">
         <div class="panel editor">
-          <h2>Compose your live post</h2>
+          <div class="editor-heading">
+            <div>
+              <h2>Compose your live post</h2>
+              <span class="local-draft-label"><span class="local-draft-dot"></span> Draft stays local until you publish</span>
+            </div>
+            <div class="editor-actions">
+              <button class="btn small" id="load-draft-btn" type="button">Reload LinkedIn draft</button>
+              <button class="btn small ghost" id="copy-post-btn" type="button">Copy text</button>
+            </div>
+          </div>
+
+          <div class="featured-draft">
+            <div class="featured-draft-copy">
+              <span class="draft-kicker">LinkedIn · English</span>
+              <strong>Neck muscle spasms &amp; driving</strong>
+              <span>Prepared for Abdulrahman Howsawy · Senior Physical Therapist</span>
+            </div>
+            <span class="draft-length" id="draft-length">0 / 3,000</span>
+          </div>
 
           <label class="field-label" for="post-text">Text</label>
-          <textarea id="post-text" rows="7" placeholder="What's happening? This goes live on every selected platform when you hit Publish…"></textarea>
+          <textarea id="post-text" rows="16" placeholder="What's happening? This goes live on every selected platform when you hit Publish…"></textarea>
           <div class="counters" id="counters"></div>
 
           <label class="field-label" for="post-image">Image URL <span class="optional">optional — must be publicly reachable (https://…)</span></label>
