@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مزامنة خطة العمل مع Google Sheets — AI OS</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 24px; min-height: 100vh; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 900px; }
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { font-size: 24px; margin-bottom: 8px; color: #60a5fa; }
+    .header p { color: var(--text-muted); font-size: 14px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-control { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: var(--primary); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; width: 100%; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.2); }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-task { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .badge-idea { background: rgba(245, 158, 11, 0.2); color: #fde68a; }
+    .badge-decision { background: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
+    .status-cell { font-weight: bold; width: 100px; text-align: center; }
+    .status-pending { color: var(--text-muted); }
+    .status-syncing { color: var(--warning); }
+    .status-done { color: var(--success); }
+    .status-err { color: var(--danger); }
+    .progress-bar-container { width: 100%; height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin: 16px 0; display: none; }
+    .progress-bar { height: 100%; width: 0%; background: var(--primary); transition: width 0.3s; }
+    .success-alert { display: none; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #a7f3d0; padding: 14px; border-radius: 8px; margin-top: 16px; text-align: center; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 مزامنة خطة العمل إلى Google Sheets</h1>
+      <p>إرسال فوري ومباشر إلى تبويب <strong>مدخلات الوكيل</strong> عبر الـ Webhook الخاص بنظامك</p>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <label>Google Apps Script Webhook URL:</label>
+        <input type="text" id="webhookUrl" class="form-control" value="https://script.google.com/macros/s/AKfycbzukkMQpo6fpBKfuzHDNl82b-BoFKRokVI6N_baejWul9hVgMzNoC4zBf4vv1OpQiQ_/exec">
+      </div>
+      <div class="form-group">
+        <label>Agent Secret:</label>
+        <input type="password" id="webhookSecret" class="form-control" value="Iamthe@best555">
+      </div>
+
+      <button id="syncBtn" class="btn btn-primary" onclick="startSync()">
+        <span>📤 إرسال كافة البنود (10) إلى Google Sheets الآن</span>
+      </button>
+
+      <div id="progressContainer" class="progress-bar-container">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div id="successAlert" class="success-alert">
+        🎉 تم إرسال كافة البنود بنجاح إلى جدول Google Sheets الخاص بك!
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size: 16px; margin-bottom: 12px; color: #94a3b8;">قائمة البنود الجاهزة للإرسال:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>التصنيف</th>
+            <th>العنوان</th>
+            <th>النوع</th>
+            <th>الأولوية</th>
+            <th>الموعد</th>
+            <th>الحالة</th>
+          </tr>
+        </thead>
+        <tbody id="taskRows">
+          <!-- Rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const tasks = [
+      { category: "مهمة", title: "مذبحة التابات وإغلاق النوافذ غير الضرورية", type: "شخصي", priority: "عالية", due: "2026-09-07", note: "الإبقاء على 3 تابات عمل فقط وأرشفة/إغلاق الباقي" },
+      { category: "مهمة", title: "تصفية 3 مهام معلقة سريعة (أقل من 5 دقائق)", type: "عمل", priority: "عالية", due: "2026-09-07", note: "إنجازها دفعة واحدة في 15 دقيقة لكسر التسويف" },
+      { category: "مهمة", title: "ترتيب مكان شحن الهاتف بعيداً عن السرير", type: "شخصي", priority: "متوسطة", due: "2026-09-07", note: "شاحن سليم ومكانه يبعد خطوتين على الأقل عن السرير" },
+      { category: "مهمة", title: "إعادة ضبط نظام المنبهات (منبهين فقط)", type: "شخصي", priority: "عالية", due: "2026-09-08", note: "المنبه الأساسي + منبه طوارئ بعد 15 دقيقة فقط" },
+      { category: "مهمة", title: "تطبيق قاعدة المهام الثلاث الرئيسية لليوم", type: "عمل", priority: "عالية", due: "2026-09-08", note: "تحديد أهم 3 مهام يومياً وإنجاز المهمة الكبرى صباحاً" },
+      { category: "مهمة", title: "جلستان عمل عميق ومكثف (Deep Work - 25 دقيقة)", type: "عمل", priority: "متوسطة", due: "2026-09-09", note: "التركيز بدون مقاطعات أو هاتف بنظام بومودورو" },
+      { category: "مهمة", title: "نشاط بدني خفيف وشرب 2 لتر ماء", type: "صحة", priority: "متوسطة", due: "2026-09-10", note: "مشي 20 دقيقة والحفاظ على ترطيب الجسم طوال اليوم" },
+      { category: "مهمة", title: "جلسة مراجعة أسبوعية وتخطيط الأسبوع القادم", type: "تطوير", priority: "متوسطة", due: "2026-09-13", note: "تقييم ما تم إنجازه وتحديد أولويات الـ 3 مهام للأسبوع الجديد" },
+      { category: "فكرة", title: "نظام الحد الأدنى الفعّال (Minimum Effective Dose)", type: "تطوير", priority: "متوسطة", due: "", note: "الاعتماد على استمرارية 20% لتحقيق 80% من النتائج بدلاً من المثالية المرهقة" },
+      { category: "قرار", title: "الالتزام بإنهاء المهام القصيرة فوراً (قاعدة الـ 5 دقائق)", type: "تطوير", priority: "عالية", due: "2026-09-07", note: "أي مهمة تستغرق أقل من 5 دقائق تنفذ فوراً دون تأجيل" }
+    ];
+
+    function renderTable() {
+      const tbody = document.getElementById("taskRows");
+      tbody.innerHTML = tasks.map((t, idx) => `
+        <tr>
+          <td><span class="badge ${t.category === 'مهمة' ? 'badge-task' : (t.category === 'فكرة' ? 'badge-idea' : 'badge-decision')}">${t.category}</span></td>
+          <td style="font-weight: 500;">${t.title}</td>
+          <td>${t.type}</td>
+          <td>${t.priority}</td>
+          <td>${t.due || '—'}</td>
+          <td id="status-${idx}" class="status-cell status-pending">في الانتظار</td>
+        </tr>
+      `).join('');
+    }
+
+    async function startSync() {
+      const url = document.getElementById("webhookUrl").value.trim();
+      const secret = document.getElementById("webhookSecret").value.trim();
+      const btn = document.getElementById("syncBtn");
+      const progressCont = document.getElementById("progressContainer");
+      const progressBar = document.getElementById("progressBar");
+      const successAlert = document.getElementById("successAlert");
+
+      if (!url || !secret) {
+        alert("يرجى إدخال الرابط والمفتاح السري!");
+        return;
+      }
+
+      btn.disabled = true;
+      progressCont.style.display = "block";
+      successAlert.style.display = "none";
+
+      let completed = 0;
+
+      for (let i = 0; i < tasks.length; i++) {
+        const t = tasks[i];
+        const statusEl = document.getElementById(`status-${i}`);
+        statusEl.className = "status-cell status-syncing";
+        statusEl.textContent = "جاري الإرسال...";
+
+        const row = ["2026-09-07", t.category, t.title, t.type, t.priority, t.due, t.note];
+        const payload = {
+          action: "append",
+          tab: "مدخلات الوكيل",
+          secret: secret,
+          row: row
+        };
+
+        try {
+          await fetch(url, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          statusEl.className = "status-cell status-done";
+          statusEl.textContent = "✓ تم الإرسال";
+        } catch (err) {
+          statusEl.className = "status-cell status-err";
+          statusEl.textContent = "✕ خطأ";
+        }
+
+        completed++;
+        progressBar.style.width = `${(completed / tasks.length) * 100}%`;
+      }
+
+      btn.disabled = false;
+      successAlert.style.display = "block";
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
