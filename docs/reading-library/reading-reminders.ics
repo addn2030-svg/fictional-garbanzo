@@ -1,0 +1,86 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Reading Library//AR//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:مكتبة مصادر القراءة
+BEGIN:VTIMEZONE
+TZID:Asia/Riyadh
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0300
+TZOFFSETTO:+0300
+TZNAME:+03
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:reading-1@library.local
+DTSTAMP:20260908T060000Z
+DTSTART;TZID=Asia/Riyadh:20260909T070000
+DTEND;TZID=Asia/Riyadh:20260909T071200
+RRULE:FREQ=DAILY
+SUMMARY:📖 الصباح — ملخص Atomic Habits (12 د)
+DESCRIPTION:أسئلة المراجعة:\n1. ما الفرق بين هدف النتيجة وهدف الهوية؟\n2. ما قاعدة الـ 1% وكيف تطبقها غدًا؟\n3. ما العادة الواحدة التي تريد بناءها هذا الشهر؟\n\nالرابط: ثبّت رابط الفيديو الذي اخترته هنا.
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:وقت القراءة
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:reading-2@library.local
+DTSTAMP:20260908T060000Z
+DTSTART;TZID=Asia/Riyadh:20260909T072000
+DTEND;TZID=Asia/Riyadh:20260909T073400
+RRULE:FREQ=DAILY
+SUMMARY:📖 الصباح — Kelly McGonigal: Stress TED (14 د)
+DESCRIPTION:https://www.youtube.com/watch?v=RcGyVTAoXEU\n\nأسئلة المراجعة:\n1. كيف يتحول الضغط من عدو إلى حليف؟\n2. ما دور الأوكسيتوسين في لحظات الضغط؟\n3. ما موقف ضاغط تمر به الآن ويمكن إعادة تأطيره؟
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:وقت القراءة
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:reading-3@library.local
+DTSTAMP:20260908T060000Z
+DTSTART;TZID=Asia/Riyadh:20260909T080000
+DTEND;TZID=Asia/Riyadh:20260909T081600
+RRULE:FREQ=DAILY
+SUMMARY:🚗 في السيارة — ملخص Psychology of Money (16 د)
+DESCRIPTION:أسئلة المراجعة:\n1. ما الفرق بين الثروة والغنى حسب مورغان هاوسل؟\n2. كيف تؤثر تجاربك المالية الماضية على قراراتك اليوم؟\n3. ما القرار المالي الواحد الذي تريد تغييره بعد هذا الملخص؟\n\nاستماع صوتي فقط أثناء القيادة.
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:وقت الاستماع
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:reading-4@library.local
+DTSTAMP:20260908T060000Z
+DTSTART;TZID=Asia/Riyadh:20260909T130000
+DTEND;TZID=Asia/Riyadh:20260909T132000
+RRULE:FREQ=DAILY
+SUMMARY:🍽️ الغداء — Ali Abdaal: مصادر الدخل (20 د)
+DESCRIPTION:أسئلة المراجعة:\n1. أي مصدر دخل يناسب تخصصك كأخصائي؟\n2. ما الفرق بين الدخل النشط والدخل السلبي؟\n3. ما الخطوة الواحدة التي تبدأها هذا الأسبوع نحو مصدر دخل إضافي؟
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:وقت المشاهدة
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:reading-5@library.local
+DTSTAMP:20260908T060000Z
+DTSTART;TZID=Asia/Riyadh:20260909T210000
+DTEND;TZID=Asia/Riyadh:20260909T211000
+RRULE:FREQ=DAILY
+SUMMARY:🌙 مراجعة اليوم (10 د)
+DESCRIPTION:1. ما أهم فكرة واحدة خرجت بها اليوم؟\n2. ما الذي طبّقته فعليًا اليوم؟\n3. ما الذي ستؤجله أو تحذفه غدًا؟\n\nحدّث عمود «الحالة» في الشيت.
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:وقت المراجعة
+END:VALARM
+END:VEVENT
+END:VCALENDAR
